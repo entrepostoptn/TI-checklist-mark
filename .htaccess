@@ -2,29 +2,47 @@
 # Configuração para Hostinger / Apache / LiteSpeed (SPA React)
 # ----------------------------------------------------------------------
 
-# 1. Definir index.html como documento padrão (evita erro 403 Forbidden)
+# 1. Definir arquivos de índice
 DirectoryIndex index.html
 
-# 2. Desabilitar listagem de diretório e permitir FollowSymLinks
+# 2. Desabilitar listagem de diretório
 Options -Indexes +FollowSymLinks
 
-# 3. Tratamento explícito de favicon para evitar 404
+# 3. Reescrever requisições para a pasta dist se ela existir no repositório
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
 
-  # Favicon e arquivos de sistema
+  # Favicon e manifest direto
   RewriteRule ^favicon\.ico$ - [L]
   RewriteRule ^favicon\.svg$ - [L]
   RewriteRule ^manifest\.json$ - [L]
 
-  # Se o arquivo ou diretório existir fisicamente, serve direto
+  # Se a pasta dist/ existir no servidor e a requisição NÃO for para dist/
+  RewriteCond %{REQUEST_URI} !^/dist/
+  RewriteCond %{DOCUMENT_ROOT}/dist/index.html -f
+  RewriteRule ^$ dist/index.html [L]
+
+  # Redirecionar arquivos existentes dentro de dist (assets, favicon, manifest, etc.)
+  RewriteCond %{REQUEST_URI} !^/dist/
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{DOCUMENT_ROOT}/dist/$1 -f [OR]
+  RewriteCond %{DOCUMENT_ROOT}/dist/$1 -d
+  RewriteRule ^(.*)$ dist/$1 [L]
+
+  # SPA Fallback: Qualquer rota inexistente vai para dist/index.html
+  RewriteCond %{REQUEST_URI} !^/dist/
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{DOCUMENT_ROOT}/dist/index.html -f
+  RewriteRule ^(.*)$ dist/index.html [L]
+
+  # Se dist/ não existir (ex: raiz direta), aplica as regras padrão
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
 
-  # Se não existir, envia para o index.html (SPA Fallback)
-  RewriteRule ^ index.html [L]
+  RewriteRule . index.html [L]
 </IfModule>
 
 # 4. Tipos MIME para arquivos estáticos

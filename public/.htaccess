@@ -1,19 +1,19 @@
 # ----------------------------------------------------------------------
-# Configuração para Hostinger / Apache / LiteSpeed (SPA React)
+# Configuração para Hostinger / Apache / LiteSpeed (SPA React - Produção)
 # ----------------------------------------------------------------------
 
-# 1. Definir index.html como documento padrão (evita erro 403 Forbidden)
+# 1. Definir index.html como documento padrão
 DirectoryIndex index.html
 
-# 2. Desabilitar listagem de diretório e permitir FollowSymLinks
+# 2. Desabilitar listagem de diretório
 Options -Indexes +FollowSymLinks
 
-# 3. Tratamento explícito de favicon para evitar 404
+# 3. Tratamento de rotas e SPA Router
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
 
-  # Favicon e arquivos de sistema
+  # Favicon e manifest
   RewriteRule ^favicon\.ico$ - [L]
   RewriteRule ^favicon\.svg$ - [L]
   RewriteRule ^manifest\.json$ - [L]
@@ -23,7 +23,7 @@ Options -Indexes +FollowSymLinks
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
 
-  # Se não existir, envia para o index.html (SPA Fallback)
+  # Se não existir, envia para index.html
   RewriteRule ^ index.html [L]
 </IfModule>
 
