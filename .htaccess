@@ -2,7 +2,7 @@
 # Configuração para Hostinger / Apache / LiteSpeed (SPA React)
 # ----------------------------------------------------------------------
 
-# 1. Definir arquivos de índice
+# 1. Definir arquivos de índice padrão
 DirectoryIndex index.html
 
 # 2. Desabilitar listagem de diretório
@@ -13,39 +13,32 @@ Options -Indexes +FollowSymLinks
   RewriteEngine On
   RewriteBase /
 
-  # Favicon e manifest direto
+  # Favicon, assets e manifest diretos
   RewriteRule ^favicon\.ico$ - [L]
   RewriteRule ^favicon\.svg$ - [L]
   RewriteRule ^manifest\.json$ - [L]
 
-  # Se a pasta dist/ existir no servidor e a requisição NÃO for para dist/
-  RewriteCond %{REQUEST_URI} !^/dist/
-  RewriteCond %{DOCUMENT_ROOT}/dist/index.html -f
-  RewriteRule ^$ dist/index.html [L]
-
-  # Redirecionar arquivos existentes dentro de dist (assets, favicon, manifest, etc.)
-  RewriteCond %{REQUEST_URI} !^/dist/
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{DOCUMENT_ROOT}/dist/$1 -f [OR]
-  RewriteCond %{DOCUMENT_ROOT}/dist/$1 -d
-  RewriteRule ^(.*)$ dist/$1 [L]
-
-  # SPA Fallback: Qualquer rota inexistente vai para dist/index.html
-  RewriteCond %{REQUEST_URI} !^/dist/
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteCond %{DOCUMENT_ROOT}/dist/index.html -f
-  RewriteRule ^(.*)$ dist/index.html [L]
-
-  # Se dist/ não existir (ex: raiz direta), aplica as regras padrão
+  # Se o arquivo ou diretório solicitado existir fisicamente na raiz, serve direto
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
 
-  RewriteRule . index.html [L]
+  # Se existir dentro da pasta dist, reescreve internamente para dist/
+  RewriteCond %{REQUEST_URI} !^/dist/
+  RewriteCond dist/$1 -f [OR]
+  RewriteCond dist/$1 -d
+  RewriteRule ^(.*)$ dist/$1 [L]
+
+  # SPA Fallback: Se a pasta dist existir, serve dist/index.html
+  RewriteCond %{REQUEST_URI} !^/dist/
+  RewriteCond dist/index.html -f
+  RewriteRule ^ dist/index.html [L]
+
+  # SPA Fallback padrão na raiz
+  RewriteRule ^ index.html [L]
 </IfModule>
 
-# 4. Tipos MIME para arquivos estáticos
+# 4. Tipos MIME para arquivos estáticos modernos
 <IfModule mod_mime.c>
   AddType image/x-icon ico
   AddType image/svg+xml svg svgz
@@ -55,7 +48,7 @@ Options -Indexes +FollowSymLinks
   AddType application/manifest+json webmanifest
 </IfModule>
 
-# 5. Compressão
+# 5. Compressão Gzip/Deflate
 <IfModule mod_deflate.c>
   AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css application/javascript application/json image/svg+xml
 </IfModule>

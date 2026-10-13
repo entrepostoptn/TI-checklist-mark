@@ -1,54 +1,51 @@
-# Checklist Operacional TI - Preparação de Computadores de Lojas
+# Checklist Operacional TI - Gestão de Equipamentos, Manutenção & OS
 
-Aplicativo para técnicos de TI realizarem formatação, configuração e homologação de computadores e PDVs de lojas, além do controle de Ordens de Serviço (máquinas reservas, no escritório para reparo e prontas).
-
----
-
-## ⚠️ Como Resolver os Erros no GitHub / Hostinger:
-### 1. `Failed to load module script: Expected a JavaScript module script but the server responded with a MIME type of "text/plain". main.tsx:1`
-### 2. `Failed to load resource: the server responded with a status of 404 () manifest.json:1`
-
-### 💡 Por que esses erros acontecem?
-- O navegador **não executa arquivos TypeScript (`.tsx`) diretamente**. O arquivo `main.tsx` só funciona quando o Vite está rodando em modo de desenvolvimento (`npm run dev`).
-- Em hospedagens como a **Hostinger (LiteSpeed/Apache)**, o servidor entrega o arquivo `.tsx` como texto comum (`text/plain`), e o navegador bloqueia a execução por segurança.
-- O `.gitignore` estava ignorando a pasta `dist/`. Ao fazer `git push` para o GitHub, os arquivos compilados de produção (`.js` e `.css`) **não estavam sendo enviados para o GitHub**, enviando apenas o código-fonte cru.
+Aplicativo para técnicos e gestores de TI realizarem controle patrimonial, ordens de serviço, checklist de preparação de máquinas, histórico cronológico de manutenções, peças e relatórios gerenciais com sincronização global em nuvem via Firebase.
 
 ---
 
-## 🛠️ O que foi corrigido no projeto:
+## 🛠️ Correções Realizadas na Implantação (CI/CD, Hostinger e Nuvem):
 
-1. **Removido `dist/` do `.gitignore`**: Agora a pasta `dist/` (com os arquivos compilados `.js`, `.css`, `index.html` e `manifest.json`) é rastreada pelo Git e enviada para o seu repositório do GitHub.
-2. **Adicionado roteamento inteligente no `.htaccess` da raiz**: Se a Hostinger abrir a raiz do repositório, o servidor Apache/LiteSpeed redireciona internamente para os arquivos compilados da pasta `dist/`, evitando que o navegador tente abrir o `main.tsx`.
-3. **Copiados `manifest.json`, `favicon.ico` e `favicon.svg`**: Estão disponíveis tanto na raiz quanto na pasta `public/` e `dist/`, eliminando qualquer erro 404.
+1. **Resolução de Conflito de Dependências (`ERESOLVE` no `npm install`)**:
+   - O pacote `esbuild` conflitava com a versão embutida do `vite@8`, travando o `npm install` no GitHub Actions e em ambientes de deploy automatizados. O conflito foi resolvido.
+2. **Geração do `package-lock.json`**:
+   - O GitHub Actions (`actions/setup-node@v4` com `cache: 'npm'`) falhava ao não encontrar o arquivo de lock. O `package-lock.json` foi gerado e incluído.
+3. **Criação do Script e Servidor de Produção (`npm start` e `server.js`)**:
+   - Contêineres de nuvem (Google Cloud Run / Buildpacks / AI Studio) exigem o comando `npm start`. Criamos o `server.js` com Express que serve a aplicação compilada na porta configurada pelo ambiente (`PORT`).
+4. **Fluxo do GitHub Actions Atualizado (`.github/workflows/deploy-hostinger.yml`)**:
+   - Suporte aos branches `main` e `master`;
+   - Ativação do disparador manual `workflow_dispatch` (botão "Run workflow" no GitHub);
+   - Execução com `npm install --legacy-peer-deps` e cache otimizado.
+5. **Roteamento `.htaccess` e Script `deploy.sh` Aprimorados**:
+   - Compatibilidade total com Apache e LiteSpeed (Hostinger), tratando rotas da SPA sem erros de MIME type ou 404 em subpastas ou domínios raiz.
 
 ---
 
 ## 🚀 Como Publicar na Hostinger Sem Erros:
 
-### Opção A: Pelo Git da Hostinger (Mais Prático)
-1. No seu computador, gere o build e envie tudo (incluindo a pasta `dist`) para o GitHub:
+### Opção A: Pelo Git da Hostinger (Recomendado)
+1. No seu terminal ou repositório, gere o build de produção:
    ```bash
    npm run build
    git add .
-   git commit -m "build de producao"
+   git commit -m "build e correcao de deploy"
    git push origin main
    ```
 2. No painel da Hostinger (**hPanel > Websites > Gerenciar > Git**):
-   - Clique em **Deploy** / **Puxar (Pull)** para atualizar os arquivos do GitHub.
-   - **Importante:** No campo de diretório do domínio na Hostinger (ou via `.htaccess` que já configuramos), a pasta `dist/` será servida automaticamente.
+   - Clique em **Deploy** / **Puxar (Pull)** para atualizar os arquivos do repositório.
+   - O `.htaccess` configurado direciona automaticamente todas as requisições para os arquivos compilados da pasta `dist/`.
 
 ### Opção B: Enviar diretamente a pasta `dist/` pelo Gerenciador de Arquivos da Hostinger
-1. No seu computador, execute:
+1. Execute:
    ```bash
    npm run build
    ```
-2. Uma pasta chamada **`dist`** será atualizada.
-3. No hPanel da Hostinger, abra o **Gerenciador de Arquivos (File Manager)** > entre na pasta **`public_html`**.
-4. Envie todo o conteúdo de **dentro** da pasta `dist`:
+2. No hPanel da Hostinger, abra o **Gerenciador de Arquivos (File Manager)** e acesse a pasta **`public_html`**.
+3. Envie todo o conteúdo de **dentro** da pasta `dist`:
    - `index.html`
    - `.htaccess`
-   - pasta `assets/` (com os arquivos `.js` e `.css`)
-   - `favicon.ico`
-   - `favicon.svg`
+   - pasta `assets/` (`index.js` e `app.css`)
+   - `favicon.ico` e `favicon.svg`
    - `manifest.json`
-5. Pronto! Ao acessar seu site, o aplicativo abrirá instantaneamente sem nenhum erro no console.
+   - `sw.js`
+4. Acesse o site no navegador — o sistema abrirá perfeitamente e sincronizado com o Firebase.
