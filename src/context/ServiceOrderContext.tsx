@@ -1,5 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { ServiceOrder, ServiceOrderStatus } from '../types/serviceOrder';
+import {
+  subscribeToServiceOrders,
+  syncSaveServiceOrder,
+  syncDeleteServiceOrder,
+  checkAndInitializeDatabase,
+} from '../services/firestoreSync';
 
 interface ServiceOrderContextType {
   orders: ServiceOrder[];
@@ -29,7 +35,7 @@ interface ServiceOrderContextType {
 
 const STORAGE_KEY_ORDERS = 'it_service_orders_v1';
 
-const INITIAL_DEMO_ORDERS: ServiceOrder[] = [
+export const INITIAL_DEMO_ORDERS: ServiceOrder[] = [
   {
     id: 'os_101',
     numeroOs: 'OS-101',
@@ -45,13 +51,13 @@ const INITIAL_DEMO_ORDERS: ServiceOrder[] = [
     diagnosticoTecnico: 'Setores defeituosos no SSD antigo. Necessária troca e formatação limpa com MGV e Full PDV.',
     servicosExecutados: 'Substituído SSD antigo por SSD 240GB Kingston.',
     pecasTrocadas: 'SSD 240GB Kingston SATA III',
-    dataEntrada: new Date().toISOString().split('T')[0],
-    dataPrevisao: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+    dataEntrada: '2026-10-12',
+    dataPrevisao: '2026-10-14',
     checklistProgresso: 45,
     checklistConcluido: false,
     observacoes: 'Aguardando validação da carga MGV e comunicação da balança Toledo.',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: '2026-10-12T09:15:00Z',
+    updatedAt: '2026-10-12T10:00:00Z',
   },
   {
     id: 'os_102',
@@ -66,12 +72,12 @@ const INITIAL_DEMO_ORDERS: ServiceOrder[] = [
     defeitoRelatado: 'Máquina reserva de contingência para substituição rápida de frente de caixa.',
     diagnosticoTecnico: 'Hardware 100% testado. Imagem padrão instalada com MGV, SIU/Impressor e Full PDV.',
     servicosExecutados: 'Formatação completa, testes de porta serial/COM e estresse de memória.',
-    dataEntrada: new Date(Date.now() - 86400000 * 3).toISOString().split('T')[0],
+    dataEntrada: '2026-10-08',
     checklistProgresso: 100,
     checklistConcluido: true,
     observacoes: 'Balança Toledo configurada em IP 192.168.0.201. Pronta para envio em caso de pane.',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: '2026-10-08T10:00:00Z',
+    updatedAt: '2026-10-08T11:00:00Z',
   },
   {
     id: 'os_103',
@@ -86,12 +92,12 @@ const INITIAL_DEMO_ORDERS: ServiceOrder[] = [
     defeitoRelatado: 'Estação de trabalho reserva para gerência ou retaguarda.',
     diagnosticoTecnico: 'Sistema operacional ativado e suíte Office instalada e homologada.',
     servicosExecutados: 'Instalação Windows 11 Pro, Office 2021, impressora padrão e AnyDesk.',
-    dataEntrada: new Date(Date.now() - 86400000 * 5).toISOString().split('T')[0],
+    dataEntrada: '2026-10-05',
     checklistProgresso: 100,
     checklistConcluido: true,
     observacoes: 'Reservada no armário 2 da TI.',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: '2026-10-05T14:00:00Z',
+    updatedAt: '2026-10-05T15:00:00Z',
   },
   {
     id: 'os_104',
@@ -107,13 +113,13 @@ const INITIAL_DEMO_ORDERS: ServiceOrder[] = [
     defeitoRelatado: 'Impressora Epson não cortava o papel e erro no módulo Impressor.',
     diagnosticoTecnico: 'Driver corrompido e spooler travado. Reinstalado driver TM-T20X e executado checklist completo.',
     servicosExecutados: 'Limpeza interna, reinstalação de drivers e teste final de homologação OK.',
-    dataEntrada: new Date(Date.now() - 86400000 * 2).toISOString().split('T')[0],
-    dataConclusao: new Date().toISOString().split('T')[0],
+    dataEntrada: '2026-10-10',
+    dataConclusao: '2026-10-12',
     checklistProgresso: 100,
     checklistConcluido: true,
     observacoes: 'Homologada 100%. Aguardando motorista/gerente da Loja Shopping para retirada.',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: '2026-10-10T11:30:00Z',
+    updatedAt: '2026-10-12T16:00:00Z',
   },
 ];
 
@@ -125,25 +131,37 @@ export const ServiceOrderProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const stored = localStorage.getItem(STORAGE_KEY_ORDERS);
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch (e) {
-      console.error('Erro ao ler ordens de serviço do localStorage', e);
+      console.warn('Erro ao ler ordens do cache local', e);
     }
-    return INITIAL_DEMO_ORDERS;
+    return [];
   });
 
   const [activeStatusFilter, setActiveStatusFilter] = useState<ServiceOrderStatus | 'ALL'>('ALL');
   const [searchFilter, setSearchFilter] = useState('');
 
-  // Persist to localStorage
+  // Real-time Firestore Subscription for Service Orders
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_ORDERS, JSON.stringify(orders));
-    } catch (e) {
-      console.error('Erro ao salvar ordens de serviço', e);
-    }
-  }, [orders]);
+    // 1. One-time check/seed if Firestore is brand new
+    checkAndInitializeDatabase([], INITIAL_DEMO_ORDERS, [], []).catch(() => {});
+
+    // 2. Real-time subscription to service_orders collection
+    const unsub = subscribeToServiceOrders(
+      (remoteOrders) => {
+        setOrders(remoteOrders);
+        try {
+          localStorage.setItem(STORAGE_KEY_ORDERS, JSON.stringify(remoteOrders));
+        } catch {
+          // ignore
+        }
+      },
+      (err) => console.warn('Service orders sync snapshot error:', err)
+    );
+
+    return () => unsub();
+  }, []);
 
   const addOrder = useCallback((orderData: Omit<ServiceOrder, 'id' | 'numeroOs' | 'createdAt' | 'updatedAt'>): ServiceOrder => {
     const nextSeq = orders.length + 101;
@@ -156,41 +174,65 @@ export const ServiceOrderProvider: React.FC<{ children: React.ReactNode }> = ({ 
     };
 
     setOrders((prev) => [newOrder, ...prev]);
+
+    // Save to Firestore central DB
+    syncSaveServiceOrder(newOrder).catch((err) => {
+      console.error('Falha ao salvar OS no Firestore', err);
+    });
+
     return newOrder;
   }, [orders.length]);
 
   const updateOrder = useCallback((id: string, patch: Partial<ServiceOrder>) => {
+    const current = orders.find((o) => o.id === id);
+    if (!current) return;
+
+    const updatedOrder: ServiceOrder = {
+      ...current,
+      ...patch,
+      updatedAt: new Date().toISOString(),
+    };
+
     setOrders((prev) =>
-      prev.map((order) => {
-        if (order.id !== id) return order;
-        return {
-          ...order,
-          ...patch,
-          updatedAt: new Date().toISOString(),
-        };
-      })
+      prev.map((order) => (order.id === id ? updatedOrder : order))
     );
-  }, []);
+
+    // Save to Firestore central DB
+    syncSaveServiceOrder(updatedOrder).catch((err) => {
+      console.error('Falha ao atualizar OS no Firestore', err);
+    });
+  }, [orders]);
 
   const deleteOrder = useCallback((id: string) => {
     setOrders((prev) => prev.filter((order) => order.id !== id));
+    // Delete in Firestore
+    syncDeleteServiceOrder(id).catch((err) => {
+      console.error('Falha ao excluir OS no Firestore', err);
+    });
   }, []);
 
   const changeOrderStatus = useCallback((id: string, status: ServiceOrderStatus) => {
+    const current = orders.find((o) => o.id === id);
+    if (!current) return;
+
+    const updates: Partial<ServiceOrder> = {
+      status,
+      updatedAt: new Date().toISOString(),
+    };
+    if (status === 'PRONTA' && !current.dataConclusao) {
+      updates.dataConclusao = new Date().toISOString().split('T')[0];
+    }
+
+    const updatedOrder = { ...current, ...updates };
+
     setOrders((prev) =>
-      prev.map((order) => {
-        if (order.id !== id) return order;
-        const updates: Partial<ServiceOrder> = {
-          status,
-          updatedAt: new Date().toISOString(),
-        };
-        if (status === 'PRONTA' && !order.dataConclusao) {
-          updates.dataConclusao = new Date().toISOString().split('T')[0];
-        }
-        return { ...order, ...updates };
-      })
+      prev.map((order) => (order.id === id ? updatedOrder : order))
     );
-  }, []);
+
+    syncSaveServiceOrder(updatedOrder).catch((err) => {
+      console.error('Falha ao mudar status da OS no Firestore', err);
+    });
+  }, [orders]);
 
   const getOrderById = useCallback((id: string) => {
     return orders.find((o) => o.id === id);
@@ -221,12 +263,12 @@ export const ServiceOrderProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   const exportOrdersJSON = useCallback(() => {
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(orders, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `ordens_servico_ti_${new Date().toISOString().split('T')[0]}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
+    const a = document.createElement('a');
+    a.href = dataStr;
+    a.download = `ordens_de_servico_ti_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   }, [orders]);
 
   const importOrdersJSON = useCallback((jsonData: string): boolean => {
@@ -234,12 +276,16 @@ export const ServiceOrderProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const parsed = JSON.parse(jsonData);
       if (Array.isArray(parsed)) {
         setOrders(parsed);
+        parsed.forEach((order: ServiceOrder) => {
+          syncSaveServiceOrder(order).catch(() => {});
+        });
         return true;
       }
+      return false;
     } catch (e) {
-      console.error('Falha ao importar ordens de serviço', e);
+      console.error('Erro ao importar JSON de ordens', e);
+      return false;
     }
-    return false;
   }, []);
 
   return (

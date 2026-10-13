@@ -16,6 +16,11 @@ import {
   isStepApplicable,
   isItemApplicable,
 } from '../utils/checklistGenerator';
+import {
+  subscribeToChecklistRecords,
+  syncSaveChecklistRecord,
+  syncDeleteChecklistRecord,
+} from '../services/firestoreSync';
 
 interface ChecklistContextType {
   machine: MachineIdentification;
@@ -221,14 +226,21 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   }, [machine, itemsState, stepNotes, finalObservations]);
 
-  // Persist records
+  // Real-time sync for saved checklist records
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_RECORDS, JSON.stringify(savedRecords));
-    } catch (e) {
-      console.error('Error saving records', e);
-    }
-  }, [savedRecords]);
+    const unsub = subscribeToChecklistRecords(
+      (remoteRecords) => {
+        setSavedRecords(remoteRecords);
+        try {
+          localStorage.setItem(STORAGE_KEY_RECORDS, JSON.stringify(remoteRecords));
+        } catch {
+          // ignore
+        }
+      },
+      (err) => console.warn('Checklist records sync error:', err)
+    );
+    return () => unsub();
+  }, []);
 
   // Compute steps dynamically
   const steps = useMemo(() => {
@@ -434,6 +446,9 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     };
 
     setSavedRecords((prev) => [record, ...prev]);
+    syncSaveChecklistRecord(record).catch((err) => {
+      console.error('Falha ao salvar checklist no Firestore', err);
+    });
     showToast(`Atendimento de "${machine.identificacao || 'Máquina'}" salvo no histórico!`);
     return record;
   }, [machine, config, itemsState, stepNotes, status, progressPercent, completedTasks, totalTasks, finalObservations, showToast]);
@@ -454,6 +469,9 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const deleteSavedChecklist = useCallback((recordId: string) => {
     setSavedRecords((prev) => prev.filter((r) => r.id !== recordId));
+    syncDeleteChecklistRecord(recordId).catch((err) => {
+      console.error('Falha ao excluir checklist no Firestore', err);
+    });
     showToast('Registro excluído do histórico.');
   }, [showToast]);
 

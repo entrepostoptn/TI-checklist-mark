@@ -9,17 +9,6 @@ export default defineConfig(() => {
     plugins: [
       react(),
       tailwindcss(),
-      {
-        name: 'html-dev-transform',
-        apply: 'serve',
-        transformIndexHtml(html: string) {
-          // No ambiente de desenvolvimento (dev server), carrega o main.tsx para permitir HMR e TSX
-          return html.replace(
-            /src=["']\.\/assets\/index\.js["']/g,
-            'src="/src/main.tsx"'
-          );
-        },
-      } as Plugin,
     ],
     build: {
       outDir: 'dist',

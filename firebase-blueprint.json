@@ -1,0 +1,152 @@
+{
+  "entities": {
+    "Equipment": {
+      "title": "Equipment",
+      "description": "Equipamento/máquina cadastrado no parque de TI",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "nome": { "type": "string" },
+        "patrimonio": { "type": "string" },
+        "numeroSerie": { "type": "string" },
+        "tipo": { "type": "string" },
+        "marcaModelo": { "type": "string" },
+        "lojaOrigem": { "type": "string" },
+        "localizacaoAtual": { "type": "string" },
+        "status": { "type": "string" },
+        "processador": { "type": "string" },
+        "memoriaRamGb": { "type": "number" },
+        "armazenamentoValor": { "type": "number" },
+        "armazenamentoUnidade": { "type": "string" },
+        "tipoArmazenamento": { "type": "string" },
+        "sistemaOperacional": { "type": "string" },
+        "dataPrimeiroCadastro": { "type": "string" },
+        "dataUltimaEntrada": { "type": "string" },
+        "dataUltimaRetirada": { "type": "string" },
+        "dataUltimaManutencao": { "type": "string" },
+        "tecnicoResponsavel": { "type": "string" },
+        "observacoes": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "nome", "patrimonio", "status", "tipo"]
+    },
+    "ServiceOrder": {
+      "title": "ServiceOrder",
+      "description": "Ordem de serviço de manutenção de equipamento",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "numeroOs": { "type": "string" },
+        "identificacao": { "type": "string" },
+        "patrimonio": { "type": "string" },
+        "equipamentoId": { "type": "string" },
+        "tipo": { "type": "string" },
+        "lojaOrigem": { "type": "string" },
+        "lojaDestino": { "type": "string" },
+        "tecnicoResponsavel": { "type": "string" },
+        "status": { "type": "string" },
+        "prioridade": { "type": "string" },
+        "defeitoRelatado": { "type": "string" },
+        "diagnosticoTecnico": { "type": "string" },
+        "servicosExecutados": { "type": "string" },
+        "pecasTrocadas": { "type": "string" },
+        "dataEntrada": { "type": "string" },
+        "dataPrevisao": { "type": "string" },
+        "dataEncerramento": { "type": "string" },
+        "resultadoAtendimento": { "type": "string" },
+        "checklistProgresso": { "type": "number" },
+        "checklistConcluido": { "type": "boolean" },
+        "observacoes": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "numeroOs", "identificacao", "status"]
+    },
+    "MovementRecord": {
+      "title": "MovementRecord",
+      "description": "Registro cronológico de movimentação e entrada/retirada",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "equipamentoId": { "type": "string" },
+        "equipamentoNome": { "type": "string" },
+        "patrimonio": { "type": "string" },
+        "numeroOs": { "type": "string" },
+        "dataHoraEntrada": { "type": "string" },
+        "dataHoraRetirada": { "type": "string" },
+        "lojaOrigem": { "type": "string" },
+        "destino": { "type": "string" },
+        "responsavelEntrega": { "type": "string" },
+        "tecnicoResponsavel": { "type": "string" },
+        "responsavelRetirada": { "type": "string" },
+        "motivoEnvio": { "type": "string" },
+        "problemaRelatado": { "type": "string" },
+        "servicoRealizado": { "type": "string" },
+        "resultadoAtendimento": { "type": "string" },
+        "dataDevolucao": { "type": "string" },
+        "observacoes": { "type": "string" },
+        "criadoEm": { "type": "string" }
+      },
+      "required": ["id", "equipamentoId", "criadoEm"]
+    },
+    "HardwareChangeRecord": {
+      "title": "HardwareChangeRecord",
+      "description": "Histórico de peças e alterações de hardware",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "equipamentoId": { "type": "string" },
+        "equipamentoNome": { "type": "string" },
+        "patrimonio": { "type": "string" },
+        "numeroOs": { "type": "string" },
+        "componenteSubstituido": { "type": "string" },
+        "descricaoPecaAntiga": { "type": "string" },
+        "serialPecaAntiga": { "type": "string" },
+        "componenteInstalado": { "type": "string" },
+        "marcaModeloNovo": { "type": "string" },
+        "serialPecaNova": { "type": "string" },
+        "quantidade": { "type": "number" },
+        "dataSubstituicao": { "type": "string" },
+        "tecnicoResponsavel": { "type": "string" },
+        "motivoTroca": { "type": "string" },
+        "resultado": { "type": "string" },
+        "tipoAlteracao": { "type": "string" },
+        "especificacaoAnterior": { "type": "string" },
+        "especificacaoNova": { "type": "string" },
+        "observacoes": { "type": "string" },
+        "criadoEm": { "type": "string" }
+      },
+      "required": ["id", "equipamentoId", "componenteSubstituido", "componenteInstalado", "criadoEm"]
+    },
+    "ChecklistRecord": {
+      "title": "ChecklistRecord",
+      "description": "Relatório salvo de checklist de preparação técnica",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "date": { "type": "string" },
+        "machine": { "type": "object" },
+        "stats": { "type": "object" },
+        "finalObservations": { "type": "string" },
+        "itemsState": { "type": "object" },
+        "stepNotes": { "type": "object" }
+      },
+      "required": ["id", "date"]
+    },
+    "SystemConfig": {
+      "title": "SystemConfig",
+      "description": "Configurações globais e estado de sincronização",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "isInitialized": { "type": "boolean" },
+        "companyName": { "type": "string" },
+        "department": { "type": "string" },
+        "leadTechnician": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id"]
+    }
+  }
+}

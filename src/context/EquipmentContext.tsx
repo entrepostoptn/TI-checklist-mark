@@ -3,11 +3,17 @@ import {
   Equipment,
   MovementRecord,
   HardwareChangeRecord,
-  EquipmentStatus,
-  EquipmentLocation,
-  EquipmentType,
-  StorageType,
 } from '../types/equipment';
+import {
+  subscribeToEquipments,
+  subscribeToMovements,
+  subscribeToHardwareChanges,
+  syncSaveEquipment,
+  syncDeleteEquipment,
+  syncSaveMovement,
+  syncSaveHardwareChange,
+  checkAndInitializeDatabase,
+} from '../services/firestoreSync';
 
 interface EquipmentContextType {
   equipments: Equipment[];
@@ -51,7 +57,7 @@ const STORAGE_KEY_EQUIPMENTS = 'it_equipments_v1';
 const STORAGE_KEY_MOVEMENTS = 'it_movements_v1';
 const STORAGE_KEY_HARDWARE_CHANGES = 'it_hardware_changes_v1';
 
-const INITIAL_DEMO_EQUIPMENTS: Equipment[] = [
+export const INITIAL_DEMO_EQUIPMENTS: Equipment[] = [
   {
     id: 'eq_1',
     nome: 'PDV-01',
@@ -99,52 +105,48 @@ const INITIAL_DEMO_EQUIPMENTS: Equipment[] = [
     tecnicoResponsavel: 'Carlos Silva',
     observacoes: 'Na bancada da TI. Substituição de SSD antigo e reinstalação de imagem padrão.',
     createdAt: '2024-03-10T09:00:00Z',
-    updatedAt: '2026-10-12T09:15:00Z',
+    updatedAt: '2026-10-12T10:00:00Z',
   },
   {
     id: 'eq_3',
     nome: 'PDV-RES-01',
     patrimonio: 'PAT-0099',
-    numeroSerie: 'BEM-RC8400-019',
+    numeroSerie: 'BRJ1182-DEL',
     tipo: 'PDV',
-    marcaModelo: 'Bematech RC-8400',
+    marcaModelo: 'Dell OptiPlex 3050 Micro',
     lojaOrigem: 'Estoque Central TI',
     localizacaoAtual: 'ESTOQUE',
-    status: 'DISPONIVEL_RETIRADA',
-    processador: 'Intel Celeron J1900 2.00GHz Quad-Core',
+    status: 'EM_USO',
+    processador: 'Intel Core i5-7500T 2.70GHz',
     memoriaRamGb: 8,
     armazenamentoValor: 240,
     armazenamentoUnidade: 'GB',
     tipoArmazenamento: 'SSD_SATA',
     sistemaOperacional: 'Windows 10 Pro 64-bit',
-    dataPrimeiroCadastro: '2024-06-15',
-    dataUltimaEntrada: '2026-10-05T14:00',
-    dataUltimaRetirada: '2026-10-06T11:00',
-    dataUltimaManutencao: '2026-10-06',
+    dataPrimeiroCadastro: '2024-05-15',
+    dataUltimaManutencao: '2026-10-08',
     tecnicoResponsavel: 'Marcos Oliveira',
-    observacoes: 'Máquina reserva de frente de caixa pronta para emergência. Configurada para qualquer loja.',
-    createdAt: '2024-06-15T10:00:00Z',
-    updatedAt: '2026-10-06T11:00:00Z',
+    observacoes: 'Máquina reserva de contingência para frente de caixa. Homologada com MGV e Full PDV.',
+    createdAt: '2024-05-15T14:00:00Z',
+    updatedAt: '2026-10-08T11:00:00Z',
   },
   {
     id: 'eq_4',
-    nome: 'EST-01',
+    nome: 'GER-LJ03',
     patrimonio: 'PAT-0060',
-    numeroSerie: 'LNV-TC-M720-04',
+    numeroSerie: 'LAT-5490-883',
     tipo: 'COMPUTADOR',
-    marcaModelo: 'Lenovo ThinkCentre M720s',
-    lojaOrigem: 'Loja 02 - Shopping',
+    marcaModelo: 'Dell Latitude 5490',
+    lojaOrigem: 'Loja 03 - Shopping',
     localizacaoAtual: 'LOJA',
     status: 'EM_USO',
-    processador: 'Intel Core i5-8400 2.80GHz',
+    processador: 'Intel Core i5-8250U 1.60GHz',
     memoriaRamGb: 16,
-    armazenamentoValor: 480,
+    armazenamentoValor: 512,
     armazenamentoUnidade: 'GB',
     tipoArmazenamento: 'SSD_NVME',
     sistemaOperacional: 'Windows 11 Pro 64-bit',
     dataPrimeiroCadastro: '2023-11-20',
-    dataUltimaEntrada: '2026-08-20T10:00',
-    dataUltimaRetirada: '2026-08-21T16:30',
     dataUltimaManutencao: '2026-08-21',
     tecnicoResponsavel: 'Carlos Silva',
     observacoes: 'Estação da gerência da Loja Shopping. Microsoft Office 2021 Pro instalado.',
@@ -177,7 +179,7 @@ const INITIAL_DEMO_EQUIPMENTS: Equipment[] = [
   },
 ];
 
-const INITIAL_DEMO_MOVEMENTS: MovementRecord[] = [
+export const INITIAL_DEMO_MOVEMENTS: MovementRecord[] = [
   {
     id: 'mov_1',
     equipamentoId: 'eq_2',
@@ -229,44 +231,44 @@ const INITIAL_DEMO_MOVEMENTS: MovementRecord[] = [
     destino: 'Loja 01 - Centro',
     responsavelEntrega: 'Carlos Silva',
     tecnicoResponsavel: 'Carlos Silva',
-    responsavelRetirada: 'Marcos Gerente',
-    motivoEnvio: 'Manutenção preventiva semestral e limpeza de cooler',
-    problemaRelatado: 'Aquecimento e poeira acumulada',
-    servicoRealizado: 'Limpeza física, troca de pasta térmica e atualização de segurança do Windows',
+    responsavelRetirada: 'Carlos Silva',
+    motivoEnvio: 'Manutenção preventiva periódica',
+    problemaRelatado: 'Poeira acumulada no cooler e lentidão eventual',
+    servicoRealizado: 'Limpeza física, troca de pasta térmica e atualização de drivers',
     resultadoAtendimento: 'CONCLUIDO_SUCESSO',
-    observacoes: 'Temperatura do processador baixou de 72°C para 41°C em estresse.',
+    observacoes: 'Temperatura estabilizada em 42°C sob carga.',
     criadoEm: '2026-09-15T08:30:00Z',
   },
 ];
 
-const INITIAL_DEMO_HARDWARE_CHANGES: HardwareChangeRecord[] = [
+export const INITIAL_DEMO_HARDWARE_CHANGES: HardwareChangeRecord[] = [
   {
     id: 'hw_1',
     equipamentoId: 'eq_2',
     equipamentoNome: 'PDV-02',
     patrimonio: 'PAT-0042',
     numeroOs: 'OS-101',
-    componenteSubstituido: 'Armazenamento (SSD)',
-    descricaoPecaAntiga: 'SSD SanDisk Plus 120GB SATA',
-    serialPecaAntiga: 'SD-120-9482',
+    componenteSubstituido: 'SSD',
+    descricaoPecaAntiga: 'HD SATA 500GB Seagate Barracuda 5400RPM',
+    serialPecaAntiga: 'W804912-SG',
     componenteInstalado: 'SSD Kingston A400 240GB SATA III',
     marcaModeloNovo: 'Kingston A400 240GB',
-    serialPecaNova: 'KNG-240-8831',
+    serialPecaNova: 'SA400S37-9941',
     quantidade: 1,
     tipoAlteracao: 'ARMAZENAMENTO',
-    especificacaoAnterior: '120 GB SSD',
+    especificacaoAnterior: '500 GB HD',
     especificacaoNova: '240 GB SSD SATA',
     dataSubstituicao: '2026-10-12',
     tecnicoResponsavel: 'Carlos Silva',
-    motivoTroca: 'SSD antigo com taxa de saúde de 18% no CrystalDiskInfo e lentidão na abertura do PDV',
-    resultado: 'Taxa de leitura de 510MB/s e sistema inicializando em 12 segundos',
-    observacoes: 'Peça antiga descartada para sucata.',
+    motivoTroca: 'HD com lentidão extrema, setores com falha de leitura (bad blocks) e boot demorando 4 minutos',
+    resultado: 'Boot reduzido para 18 segundos e carregamento instantâneo do PDV',
+    observacoes: 'Descarte seguro do HD antigo efetuado conforme protocolo de TI.',
     criadoEm: '2026-10-12T10:00:00Z',
   },
   {
     id: 'hw_2',
     equipamentoId: 'eq_4',
-    equipamentoNome: 'EST-01',
+    equipamentoNome: 'GER-LJ03',
     patrimonio: 'PAT-0060',
     componenteSubstituido: 'Memória RAM',
     descricaoPecaAntiga: '1x 8GB DDR4 2400MHz Samsung',
@@ -290,17 +292,18 @@ const INITIAL_DEMO_HARDWARE_CHANGES: HardwareChangeRecord[] = [
 const EquipmentContext = createContext<EquipmentContextType | null>(null);
 
 export const EquipmentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Read initial cache from localStorage as fallback during initial connection
   const [equipments, setEquipments] = useState<Equipment[]>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY_EQUIPMENTS);
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch (e) {
-      console.error('Erro ao ler equipamentos do localStorage', e);
+      console.warn('Erro ao ler cache local de equipamentos', e);
     }
-    return INITIAL_DEMO_EQUIPMENTS;
+    return [];
   });
 
   const [movements, setMovements] = useState<MovementRecord[]>(() => {
@@ -311,9 +314,9 @@ export const EquipmentProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         if (Array.isArray(parsed)) return parsed;
       }
     } catch (e) {
-      console.error('Erro ao ler movimentações do localStorage', e);
+      console.warn('Erro ao ler cache local de movimentações', e);
     }
-    return INITIAL_DEMO_MOVEMENTS;
+    return [];
   });
 
   const [hardwareChanges, setHardwareChanges] = useState<HardwareChangeRecord[]>(() => {
@@ -324,37 +327,66 @@ export const EquipmentProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         if (Array.isArray(parsed)) return parsed;
       }
     } catch (e) {
-      console.error('Erro ao ler alterações de hardware do localStorage', e);
+      console.warn('Erro ao ler cache local de alterações de hardware', e);
     }
-    return INITIAL_DEMO_HARDWARE_CHANGES;
+    return [];
   });
 
-  // Persist to localStorage
+  // Real-time Firestore Subscriptions
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_EQUIPMENTS, JSON.stringify(equipments));
-    } catch (e) {
-      console.error('Erro ao salvar equipamentos', e);
-    }
-  }, [equipments]);
+    // 1. Check and initialize once if the central DB is brand new
+    checkAndInitializeDatabase(
+      INITIAL_DEMO_EQUIPMENTS,
+      [],
+      INITIAL_DEMO_MOVEMENTS,
+      INITIAL_DEMO_HARDWARE_CHANGES
+    ).catch((err) => console.warn('Sync init check:', err));
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_MOVEMENTS, JSON.stringify(movements));
-    } catch (e) {
-      console.error('Erro ao salvar movimentações', e);
-    }
-  }, [movements]);
+    // 2. Subscribe in real-time to central Firestore collections
+    const unsubEquipments = subscribeToEquipments(
+      (remoteEquipments) => {
+        setEquipments(remoteEquipments);
+        try {
+          localStorage.setItem(STORAGE_KEY_EQUIPMENTS, JSON.stringify(remoteEquipments));
+        } catch {
+          // ignore
+        }
+      },
+      (err) => console.warn('Equipments sync snapshot error:', err)
+    );
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_HARDWARE_CHANGES, JSON.stringify(hardwareChanges));
-    } catch (e) {
-      console.error('Erro ao salvar alterações de hardware', e);
-    }
-  }, [hardwareChanges]);
+    const unsubMovements = subscribeToMovements(
+      (remoteMovements) => {
+        setMovements(remoteMovements);
+        try {
+          localStorage.setItem(STORAGE_KEY_MOVEMENTS, JSON.stringify(remoteMovements));
+        } catch {
+          // ignore
+        }
+      },
+      (err) => console.warn('Movements sync snapshot error:', err)
+    );
 
-  // Add Equipment with duplicate validation
+    const unsubHardware = subscribeToHardwareChanges(
+      (remoteChanges) => {
+        setHardwareChanges(remoteChanges);
+        try {
+          localStorage.setItem(STORAGE_KEY_HARDWARE_CHANGES, JSON.stringify(remoteChanges));
+        } catch {
+          // ignore
+        }
+      },
+      (err) => console.warn('Hardware changes sync snapshot error:', err)
+    );
+
+    return () => {
+      unsubEquipments();
+      unsubMovements();
+      unsubHardware();
+    };
+  }, []);
+
+  // Add Equipment with duplicate validation and Firestore sync
   const addEquipment = useCallback((data: Omit<Equipment, 'id' | 'createdAt' | 'updatedAt'>) => {
     const cleanPatrimonio = data.patrimonio.trim().toUpperCase();
     const cleanSerial = data.numeroSerie.trim().toUpperCase();
@@ -390,11 +422,18 @@ export const EquipmentProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       updatedAt: new Date().toISOString(),
     };
 
+    // Optimistic state update
     setEquipments((prev) => [newEquipment, ...prev]);
+
+    // Central Firestore sync (persists to cloud and broadcasts to all other devices)
+    syncSaveEquipment(newEquipment).catch((err) => {
+      console.error('Falha ao sincronizar equipamento no Firestore', err);
+    });
+
     return { success: true, equipment: newEquipment };
   }, [equipments]);
 
-  // Update Equipment with duplicate validation
+  // Update Equipment with duplicate validation and Firestore sync
   const updateEquipment = useCallback((id: string, patch: Partial<Equipment>) => {
     const current = equipments.find((e) => e.id === id);
     if (!current) return { success: false, error: 'Equipamento não encontrado.' };
@@ -419,29 +458,37 @@ export const EquipmentProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
     }
 
+    const updatedEquipment: Equipment = {
+      ...current,
+      ...patch,
+      patrimonio: patch.patrimonio ? patch.patrimonio.trim().toUpperCase() : current.patrimonio,
+      numeroSerie: patch.numeroSerie ? patch.numeroSerie.trim().toUpperCase() : current.numeroSerie,
+      updatedAt: new Date().toISOString(),
+    };
+
     setEquipments((prev) =>
-      prev.map((e) => {
-        if (e.id !== id) return e;
-        return {
-          ...e,
-          ...patch,
-          patrimonio: patch.patrimonio ? patch.patrimonio.trim().toUpperCase() : e.patrimonio,
-          numeroSerie: patch.numeroSerie ? patch.numeroSerie.trim().toUpperCase() : e.numeroSerie,
-          updatedAt: new Date().toISOString(),
-        };
-      })
+      prev.map((e) => (e.id === id ? updatedEquipment : e))
     );
+
+    // Broadcast to Firestore
+    syncSaveEquipment(updatedEquipment).catch((err) => {
+      console.error('Falha ao atualizar equipamento no Firestore', err);
+    });
 
     return { success: true };
   }, [equipments]);
 
-  // Delete Equipment with safety
+  // Delete Equipment with safety and Firestore sync
   const deleteEquipment = useCallback((id: string) => {
     setEquipments((prev) => prev.filter((e) => e.id !== id));
+    // Remove centrally in Firestore so it immediately disappears on all other devices
+    syncDeleteEquipment(id).catch((err) => {
+      console.error('Falha ao excluir equipamento no Firestore', err);
+    });
     return { success: true };
   }, []);
 
-  // Add Timeline Movement
+  // Add Timeline Movement with Firestore sync
   const addMovement = useCallback((recordData: Omit<MovementRecord, 'id' | 'criadoEm'>): MovementRecord => {
     const newMovement: MovementRecord = {
       ...recordData,
@@ -450,6 +497,11 @@ export const EquipmentProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     };
 
     setMovements((prev) => [newMovement, ...prev]);
+
+    // Save movement to Firestore
+    syncSaveMovement(newMovement).catch((err) => {
+      console.error('Falha ao sincronizar movimentação no Firestore', err);
+    });
 
     // Update equipment's last dates & status if relevant
     setEquipments((prev) =>
@@ -472,14 +524,16 @@ export const EquipmentProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           updates.dataUltimaManutencao = new Date().toISOString().split('T')[0];
         }
 
-        return { ...eq, ...updates };
+        const updatedEq = { ...eq, ...updates };
+        syncSaveEquipment(updatedEq).catch(() => {});
+        return updatedEq;
       })
     );
 
     return newMovement;
   }, []);
 
-  // Add Hardware Change Record
+  // Add Hardware Change Record with Firestore sync
   const addHardwareChange = useCallback((
     recordData: Omit<HardwareChangeRecord, 'id' | 'criadoEm'>,
     applyToEquipment: boolean = true
@@ -491,6 +545,10 @@ export const EquipmentProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     };
 
     setHardwareChanges((prev) => [newChange, ...prev]);
+
+    syncSaveHardwareChange(newChange).catch((err) => {
+      console.error('Falha ao sincronizar alteração de hardware no Firestore', err);
+    });
 
     // Optionally apply hardware spec updates to the equipment's current profile
     if (applyToEquipment && recordData.tipoAlteracao) {
@@ -513,7 +571,9 @@ export const EquipmentProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             else if (/HD/i.test(recordData.especificacaoNova)) patch.tipoArmazenamento = 'HD';
           }
 
-          return { ...eq, ...patch };
+          const updatedEq = { ...eq, ...patch };
+          syncSaveEquipment(updatedEq).catch(() => {});
+          return updatedEq;
         })
       );
     }
@@ -597,12 +657,15 @@ export const EquipmentProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       const parsed = JSON.parse(jsonData);
       if (parsed.equipments && Array.isArray(parsed.equipments)) {
         setEquipments(parsed.equipments);
+        parsed.equipments.forEach((eq: Equipment) => syncSaveEquipment(eq).catch(() => {}));
       }
       if (parsed.movements && Array.isArray(parsed.movements)) {
         setMovements(parsed.movements);
+        parsed.movements.forEach((mov: MovementRecord) => syncSaveMovement(mov).catch(() => {}));
       }
       if (parsed.hardwareChanges && Array.isArray(parsed.hardwareChanges)) {
         setHardwareChanges(parsed.hardwareChanges);
+        parsed.hardwareChanges.forEach((hw: HardwareChangeRecord) => syncSaveHardwareChange(hw).catch(() => {}));
       }
       return true;
     } catch (e) {

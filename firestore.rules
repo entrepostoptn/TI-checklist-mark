@@ -1,0 +1,51 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128;
+    }
+
+    match /equipments/{equipmentId} {
+      allow read: if true;
+      allow create, update: if isValidId(equipmentId)
+        && request.resource.data.nome is string
+        && request.resource.data.patrimonio is string;
+      allow delete: if isValidId(equipmentId);
+    }
+
+    match /service_orders/{orderId} {
+      allow read: if true;
+      allow create, update: if isValidId(orderId)
+        && request.resource.data.numeroOs is string
+        && request.resource.data.status is string;
+      allow delete: if isValidId(orderId);
+    }
+
+    match /movements/{movementId} {
+      allow read: if true;
+      allow create, update: if isValidId(movementId)
+        && request.resource.data.equipamentoId is string;
+      allow delete: if isValidId(movementId);
+    }
+
+    match /hardware_changes/{changeId} {
+      allow read: if true;
+      allow create, update: if isValidId(changeId)
+        && request.resource.data.equipamentoId is string
+        && request.resource.data.componenteSubstituido is string;
+      allow delete: if isValidId(changeId);
+    }
+
+    match /checklist_records/{recordId} {
+      allow read: if true;
+      allow create, update: if isValidId(recordId);
+      allow delete: if isValidId(recordId);
+    }
+
+    match /system_config/{configId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(configId);
+    }
+  }
+}

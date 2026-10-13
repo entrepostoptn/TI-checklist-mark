@@ -2,6 +2,7 @@ import React from 'react';
 import { useChecklist } from '../context/ChecklistContext';
 import { useServiceOrders } from '../context/ServiceOrderContext';
 import { useEquipment } from '../context/EquipmentContext';
+import { useSync } from '../context/SyncContext';
 import {
   Settings,
   History,
@@ -19,6 +20,11 @@ import {
   Package,
   Shield,
   UserCheck,
+  Cloud,
+  CloudCheck,
+  Wifi,
+  WifiOff,
+  RefreshCw,
 } from 'lucide-react';
 
 export type MainAppTab = 'equipments' | 'service_orders' | 'reports' | 'checklist';
@@ -31,6 +37,7 @@ interface HeaderProps {
   onOpenSettings: () => void;
   onOpenHistory: () => void;
   onOpenCommands: () => void;
+  onOpenSyncStatus: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -41,6 +48,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenSettings,
   onOpenHistory,
   onOpenCommands,
+  onOpenSyncStatus,
 }) => {
   const {
     machine,
@@ -54,6 +62,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   const { reparoCount, reservaCount, prontaCount } = useServiceOrders();
   const { stats } = useEquipment();
+  const { status: syncStatus, isOnline } = useSync();
 
   const getStatusBadge = () => {
     switch (status) {
@@ -78,6 +87,53 @@ export const Header: React.FC<HeaderProps> = ({
           </span>
         );
     }
+  };
+
+  const getCloudSyncBadge = () => {
+    if (!isOnline || syncStatus === 'offline') {
+      return (
+        <button
+          type="button"
+          onClick={onOpenSyncStatus}
+          className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25 transition-all cursor-pointer"
+          title="Modo Offline (Alterações salvas localmente e sincronizadas quando voltar a conexão)"
+        >
+          <WifiOff className="w-3.5 h-3.5 text-amber-400" />
+          <span className="hidden sm:inline">Offline</span>
+        </button>
+      );
+    }
+
+    if (syncStatus === 'syncing') {
+      return (
+        <button
+          type="button"
+          onClick={onOpenSyncStatus}
+          className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg bg-blue-500/15 text-blue-300 border border-blue-500/30 hover:bg-blue-500/25 transition-all cursor-pointer"
+          title="Sincronizando com o banco central Firebase..."
+        >
+          <RefreshCw className="w-3.5 h-3.5 text-blue-400 animate-spin" />
+          <span className="hidden sm:inline">Sincronizando</span>
+        </button>
+      );
+    }
+
+    // Online & Synced
+    return (
+      <button
+        type="button"
+        onClick={onOpenSyncStatus}
+        className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 transition-all cursor-pointer"
+        title="Banco central em tempo real ativo. Computadores e celulares sincronizados."
+      >
+        <span className="relative flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+        </span>
+        <CloudCheck className="w-3.5 h-3.5 text-emerald-400" />
+        <span className="hidden sm:inline">Nuvem Ativa</span>
+      </button>
+    );
   };
 
   return (
@@ -107,8 +163,10 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
             </div>
 
-            {/* Profile badge mobile */}
+            {/* Cloud badge & profile mobile */}
             <div className="lg:hidden flex items-center gap-1.5">
+              {getCloudSyncBadge()}
+
               <button
                 type="button"
                 onClick={() => setUserRole(userRole === 'GESTOR' ? 'TECNICO' : 'GESTOR')}
@@ -146,7 +204,7 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <Laptop className="w-4 h-4" />
               <span>Equipamentos</span>
-              <span className="px-1.5 py-0.2 rounded bg-slate-900/60 text-slate-300 text-[10px] font-mono">
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-slate-900/40 text-blue-200">
                 {stats.totalEquipamentos}
               </span>
             </button>
@@ -163,20 +221,20 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <Wrench className="w-4 h-4" />
               <span>Ordens de Serviço</span>
-              <div className="hidden sm:flex items-center gap-1 text-[10px]">
-                <span
-                  className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30"
-                  title="No Escritório para Reparo"
-                >
-                  {reparoCount}
+              {(reparoCount > 0 || prontaCount > 0) && (
+                <span className="flex items-center gap-1 text-[10px] font-bold">
+                  {reparoCount > 0 && (
+                    <span className="px-1.5 py-0.2 rounded-full bg-amber-500/30 text-amber-300" title="Em Reparo">
+                      {reparoCount}
+                    </span>
+                  )}
+                  {prontaCount > 0 && (
+                    <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/30 text-emerald-300" title="Prontas">
+                      {prontaCount}
+                    </span>
+                  )}
                 </span>
-                <span
-                  className="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30"
-                  title="Prontas para Entrega"
-                >
-                  {prontaCount}
-                </span>
-              </div>
+              )}
             </button>
 
             {/* 3. Relatórios Operacionais */}
@@ -209,8 +267,13 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
 
-          {/* Right: Subview Switcher (when in checklist) & Global Tools */}
+          {/* Right: Cloud Sync, Subviews & Global Tools */}
           <div className="flex items-center justify-between sm:justify-end gap-2">
+            {/* Desktop Cloud Sync Badge */}
+            <div className="hidden lg:block">
+              {getCloudSyncBadge()}
+            </div>
+
             {/* Checklist View Switcher */}
             {activeMainTab === 'checklist' && (
               <div className="bg-slate-800 p-0.5 rounded-lg flex items-center border border-slate-700 text-xs">
