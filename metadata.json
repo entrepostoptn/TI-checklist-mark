@@ -1,0 +1,6 @@
+{
+  "name": "Checklist TI - Preparação de Computadores",
+  "description": "Aplicativo operacional para técnicos de TI realizarem formatação, configuração e homologação de computadores e PDVs de lojas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

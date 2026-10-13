@@ -1,0 +1,48 @@
+# ----------------------------------------------------------------------
+# Configuração para Hostinger / Apache / LiteSpeed (SPA React)
+# ----------------------------------------------------------------------
+
+# 1. Definir index.html como documento padrão (evita erro 403 Forbidden)
+DirectoryIndex index.html
+
+# 2. Desabilitar listagem de diretório e permitir FollowSymLinks
+Options -Indexes +FollowSymLinks
+
+# 3. Tratamento explícito de favicon para evitar 404
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Favicon e arquivos de sistema
+  RewriteRule ^favicon\.ico$ - [L]
+  RewriteRule ^favicon\.svg$ - [L]
+  RewriteRule ^manifest\.json$ - [L]
+
+  # Se o arquivo ou diretório existir fisicamente, serve direto
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Se não existir, envia para o index.html (SPA Fallback)
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+# 4. Tipos MIME para arquivos estáticos
+<IfModule mod_mime.c>
+  AddType image/x-icon ico
+  AddType image/svg+xml svg svgz
+  AddType application/javascript js mjs
+  AddType text/css css
+  AddType application/json json
+  AddType application/manifest+json webmanifest
+</IfModule>
+
+# 5. Compressão
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css application/javascript application/json image/svg+xml
+</IfModule>
+
+# 6. Headers de segurança
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+</IfModule>
