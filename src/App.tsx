@@ -1,7 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { ChecklistProvider, useChecklist } from './context/ChecklistContext';
 import { ServiceOrderProvider, useServiceOrders } from './context/ServiceOrderContext';
-import { Header } from './components/Header';
+import { EquipmentProvider, useEquipment } from './context/EquipmentContext';
+import { Header, MainAppTab } from './components/Header';
 import { ProgressBar } from './components/ProgressBar';
 import { StepNavigation } from './components/StepNavigation';
 import { StepContent } from './components/StepContent';
@@ -11,15 +12,41 @@ import { SettingsModal } from './components/SettingsModal';
 import { HistoryModal } from './components/HistoryModal';
 import { QuickCommandsModal } from './components/QuickCommandsModal';
 import { ServiceOrderManager } from './components/ServiceOrderManager';
+import { EquipmentManager } from './components/EquipmentManager';
+import { ReportsManager } from './components/ReportsManager';
+import { ServiceOrderModal } from './components/ServiceOrderModal';
+import { Equipment } from './types/equipment';
 import { MachineType } from './types/checklist';
-import { CheckCircle2, Sliders } from 'lucide-react';
+import { CheckCircle2, Sliders, Shield, AlertTriangle } from 'lucide-react';
 
 const MainApp: React.FC = () => {
   const { viewMode, setViewMode, toastMessage, showToast, config, updateMachine } = useChecklist();
-  const [activeMainTab, setActiveMainTab] = useState<'checklist' | 'service_orders'>('service_orders');
+  
+  // Navigation & Modals
+  const [activeMainTab, setActiveMainTab] = useState<MainAppTab>('equipments');
+  const [userRole, setUserRole] = useState<'GESTOR' | 'TECNICO'>(() => {
+    try {
+      const stored = localStorage.getItem('it_user_role');
+      if (stored === 'GESTOR' || stored === 'TECNICO') return stored;
+    } catch {}
+    return 'GESTOR';
+  });
+
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isCommandsOpen, setIsCommandsOpen] = useState(false);
+
+  // Quick action from equipment to OS modal
+  const [isDirectOsModalOpen, setIsDirectOsModalOpen] = useState(false);
+  const [directOsEquipment, setDirectOsEquipment] = useState<Equipment | null>(null);
+
+  const handleSetUserRole = (role: 'GESTOR' | 'TECNICO') => {
+    setUserRole(role);
+    try {
+      localStorage.setItem('it_user_role', role);
+    } catch {}
+    showToast(`Perfil alterado para ${role === 'GESTOR' ? 'Gestor de TI' : 'Técnico de TI'}`);
+  };
 
   const handleStartChecklistForMachine = useCallback(
     (machineData: { identificacao: string; loja: string; tecnico: string; tipo: MachineType }) => {
@@ -35,6 +62,11 @@ const MainApp: React.FC = () => {
     },
     [updateMachine, setViewMode, showToast]
   );
+
+  const handleOpenServiceOrderForMachine = useCallback((equipment: Equipment) => {
+    setDirectOsEquipment(equipment);
+    setIsDirectOsModalOpen(true);
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-100/70 text-slate-900 flex flex-col font-sans selection:bg-blue-200">
@@ -52,6 +84,8 @@ const MainApp: React.FC = () => {
       <Header
         activeMainTab={activeMainTab}
         setActiveMainTab={setActiveMainTab}
+        userRole={userRole}
+        setUserRole={handleSetUserRole}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenHistory={() => setIsHistoryOpen(true)}
         onOpenCommands={() => setIsCommandsOpen(true)}
@@ -65,9 +99,24 @@ const MainApp: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {activeMainTab === 'service_orders' ? (
+        {/* Module 1: Equipamentos & Patrimônio */}
+        {activeMainTab === 'equipments' && (
+          <EquipmentManager
+            onStartChecklistForMachine={handleStartChecklistForMachine}
+            onOpenServiceOrderForMachine={handleOpenServiceOrderForMachine}
+          />
+        )}
+
+        {/* Module 2: Ordens de Serviço & Estoque */}
+        {activeMainTab === 'service_orders' && (
           <ServiceOrderManager onStartChecklistForMachine={handleStartChecklistForMachine} />
-        ) : (
+        )}
+
+        {/* Module 3: Relatórios Operacionais */}
+        {activeMainTab === 'reports' && <ReportsManager />}
+
+        {/* Module 4: Checklist de Formatação */}
+        {activeMainTab === 'checklist' && (
           <>
             {viewMode === 'step' && <StepContent />}
             {viewMode === 'all' && <AllStepsView />}
@@ -94,16 +143,35 @@ const MainApp: React.FC = () => {
             </span>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setIsSettingsOpen(true)}
-            className="text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1 cursor-pointer"
-          >
-            <Sliders className="w-3.5 h-3.5" />
-            Alterar parâmetros
-          </button>
+          <div className="flex items-center gap-4">
+            <span className="text-slate-400">
+              Perfil: <strong className="text-slate-700">{userRole === 'GESTOR' ? 'Gestor de TI' : 'Técnico de TI'}</strong>
+            </span>
+
+            <button
+              type="button"
+              onClick={() => setIsSettingsOpen(true)}
+              className="text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1 cursor-pointer"
+            >
+              <Sliders className="w-3.5 h-3.5" />
+              Alterar parâmetros
+            </button>
+          </div>
         </div>
       </footer>
+
+      {/* Direct OS Modal from Equipment */}
+      {isDirectOsModalOpen && (
+        <ServiceOrderModal
+          isOpen={isDirectOsModalOpen}
+          onClose={() => {
+            setIsDirectOsModalOpen(false);
+            setDirectOsEquipment(null);
+          }}
+          initialEquipment={directOsEquipment}
+          onOpenChecklistForMachine={handleStartChecklistForMachine}
+        />
+      )}
 
       {/* Modals */}
       <SettingsModal
@@ -124,10 +192,12 @@ const MainApp: React.FC = () => {
 
 export default function App() {
   return (
-    <ServiceOrderProvider>
-      <ChecklistProvider>
-        <MainApp />
-      </ChecklistProvider>
-    </ServiceOrderProvider>
+    <EquipmentProvider>
+      <ServiceOrderProvider>
+        <ChecklistProvider>
+          <MainApp />
+        </ChecklistProvider>
+      </ServiceOrderProvider>
+    </EquipmentProvider>
   );
 }

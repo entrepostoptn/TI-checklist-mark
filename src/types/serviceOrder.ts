@@ -11,12 +11,16 @@ export type ServiceOrderPriority = 'BAIXA' | 'MEDIA' | 'ALTA' | 'URGENTE';
 export interface ServiceOrder {
   id: string;              // Identificador único
   numeroOs: string;        // Ex: OS-101
+  equipamentoId?: string;  // Vínculo com cadastro de equipamento
   identificacao: string;   // Ex: PDV-03 ou ESCRIT-01
   patrimonio?: string;     // Número de patrimônio / Tag
+  numeroSerie?: string;    // Service Tag / Número de série
   tipo: MachineType;       // PDV ou ESCRITORIO
   lojaOrigem: string;      // Loja onde estava a máquina ou "Estoque Central"
   lojaDestino?: string;    // Loja para onde vai após ficar pronta
   tecnicoResponsavel: string;
+  responsavelEntrega?: string; // Quem entregou no escritório
+  responsavelRetirada?: string;// Quem retirou
   status: ServiceOrderStatus;
   prioridade: ServiceOrderPriority;
 
@@ -24,12 +28,14 @@ export interface ServiceOrder {
   defeitoRelatado: string;    // Sintoma / Motivo da entrada no escritório
   diagnosticoTecnico?: string;// Análise do técnico
   servicosExecutados?: string;// O que foi feito (troca de SSD, formatação, etc.)
-  pecasTrocadas?: string;     // Ex: SSD 240GB Kingston, Memória 8GB, etc.
+  pecasTrocadas?: string;     // Resumo de peças trocadas
+  resultadoAtendimento?: 'CONCLUIDO_SUCESSO' | 'EM_ANDAMENTO' | 'AGUARDANDO_PECA' | 'CONDENADO_SUCATA';
 
   // Datas
   dataEntrada: string;     // Data de entrada no escritório (YYYY-MM-DD)
   dataPrevisao?: string;   // Previsão de entrega
   dataConclusao?: string;  // Data que ficou pronta / liberada
+  dataRetirada?: string;   // Data e hora de retirada da máquina
 
   // Integração com o Checklist
   checklistProgresso?: number; // % do checklist completado

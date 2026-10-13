@@ -1,6 +1,6 @@
 {
-  "name": "Checklist TI - Preparação de Computadores",
-  "description": "Aplicativo operacional para técnicos de TI realizarem formatação, configuração e homologação de computadores e PDVs de lojas.",
+  "name": "Checklist TI - Gestão de Equipamentos, Manutenção & OS",
+  "description": "Sistema completo de Checklist TI para preparação de computadores, controle de patrimônio, histórico de manutenção, peças, ordens de serviço e relatórios operacionais.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
