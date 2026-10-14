@@ -1,5 +1,50 @@
 {
   "entities": {
+    "Client": {
+      "title": "Client",
+      "description": "Cliente matriz atendido pela equipe de TI",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "codigo": { "type": "string" },
+        "razaoSocial": { "type": "string" },
+        "nomeFantasia": { "type": "string" },
+        "cnpj": { "type": "string" },
+        "telefone": { "type": "string" },
+        "email": { "type": "string" },
+        "responsavel": { "type": "string" },
+        "observacoes": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "codigo", "razaoSocial", "status"]
+    },
+    "Store": {
+      "title": "Store",
+      "description": "Filial ou loja vinculada a um cliente matriz",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "clienteId": { "type": "string" },
+        "clienteNome": { "type": "string" },
+        "nome": { "type": "string" },
+        "codigoLoja": { "type": "string" },
+        "cnpj": { "type": "string" },
+        "endereco": { "type": "string" },
+        "cidade": { "type": "string" },
+        "estado": { "type": "string" },
+        "cep": { "type": "string" },
+        "telefone": { "type": "string" },
+        "responsavelLocal": { "type": "string" },
+        "horarioFuncionamento": { "type": "string" },
+        "observacoes": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "clienteId", "nome", "codigoLoja", "status"]
+    },
     "Equipment": {
       "title": "Equipment",
       "description": "Equipamento/máquina cadastrado no parque de TI",

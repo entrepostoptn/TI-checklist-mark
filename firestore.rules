@@ -6,34 +6,39 @@ service cloud.firestore {
       return id is string && id.size() > 0 && id.size() <= 128;
     }
 
+    match /clients/{clientId} {
+      allow read: if true;
+      allow create, update: if isValidId(clientId);
+      allow delete: if isValidId(clientId);
+    }
+
+    match /stores/{storeId} {
+      allow read: if true;
+      allow create, update: if isValidId(storeId);
+      allow delete: if isValidId(storeId);
+    }
+
     match /equipments/{equipmentId} {
       allow read: if true;
-      allow create, update: if isValidId(equipmentId)
-        && request.resource.data.nome is string
-        && request.resource.data.patrimonio is string;
+      allow create, update: if isValidId(equipmentId);
       allow delete: if isValidId(equipmentId);
     }
 
     match /service_orders/{orderId} {
       allow read: if true;
-      allow create, update: if isValidId(orderId)
-        && request.resource.data.numeroOs is string
-        && request.resource.data.status is string;
+      allow create, update: if isValidId(orderId);
       allow delete: if isValidId(orderId);
     }
 
     match /movements/{movementId} {
       allow read: if true;
-      allow create, update: if isValidId(movementId)
-        && request.resource.data.equipamentoId is string;
+      allow create, update: if isValidId(movementId);
       allow delete: if isValidId(movementId);
     }
 
     match /hardware_changes/{changeId} {
       allow read: if true;
-      allow create, update: if isValidId(changeId)
-        && request.resource.data.equipamentoId is string
-        && request.resource.data.componenteSubstituido is string;
+      allow create, update: if isValidId(changeId);
       allow delete: if isValidId(changeId);
     }
 

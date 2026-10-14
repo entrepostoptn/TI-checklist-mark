@@ -1,7 +1,7 @@
-import React from 'react';
 import { useChecklist } from '../context/ChecklistContext';
 import { useServiceOrders } from '../context/ServiceOrderContext';
 import { useEquipment } from '../context/EquipmentContext';
+import { useClients } from '../context/ClientContext';
 import { useSync } from '../context/SyncContext';
 import {
   Settings,
@@ -13,6 +13,7 @@ import {
   AlertCircle,
   Laptop,
   Store,
+  Building2,
   Layers,
   FileText,
   ListTodo,
@@ -30,7 +31,7 @@ import {
   QrCode,
 } from 'lucide-react';
 
-export type MainAppTab = 'equipments' | 'service_orders' | 'reports' | 'checklist';
+export type MainAppTab = 'service_orders' | 'clients' | 'equipments' | 'reports' | 'checklist';
 
 interface HeaderProps {
   activeMainTab: MainAppTab;
@@ -65,8 +66,9 @@ export const Header: React.FC<HeaderProps> = ({
     savedRecords,
   } = useChecklist();
 
-  const { reparoCount, reservaCount, prontaCount } = useServiceOrders();
+  const { reparoCount, reservaCount, prontaCount, abertasCount, emAndamentoCount } = useServiceOrders();
   const { stats } = useEquipment();
+  const { clients, stores } = useClients();
   const { status: syncStatus, isOnline } = useSync();
 
   const getStatusBadge = () => {
@@ -218,9 +220,49 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
 
-          {/* Center: Main Module Navigation Bar (4 Modules) */}
+          {/* Center: Main Module Navigation Bar (5 Modules) */}
           <div className="bg-slate-800/95 p-1 rounded-xl flex items-center border border-slate-700/80 text-xs font-semibold overflow-x-auto no-scrollbar gap-1">
-            {/* 1. Equipamentos & Patrimônio */}
+            {/* 1. Atendimento & OS (Desk Operacional) */}
+            <button
+              type="button"
+              onClick={() => setActiveMainTab('service_orders')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all shrink-0 cursor-pointer ${
+                activeMainTab === 'service_orders'
+                  ? 'bg-blue-600 text-white shadow-sm font-bold'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+              }`}
+            >
+              <Wrench className="w-4 h-4" />
+              <span>Atendimento & OS</span>
+              {(abertasCount > 0 || emAndamentoCount > 0 || reparoCount > 0) && (
+                <span className="flex items-center gap-1 text-[10px] font-bold">
+                  {(abertasCount > 0 || emAndamentoCount > 0) ? (
+                    <span className="px-1.5 py-0.2 rounded-full bg-amber-500/30 text-amber-300" title="OSs Pendentes">
+                      {abertasCount + emAndamentoCount}
+                    </span>
+                  ) : null}
+                </span>
+              )}
+            </button>
+
+            {/* 2. Clientes & Lojas (Estrutura Matriz e Filiais) */}
+            <button
+              type="button"
+              onClick={() => setActiveMainTab('clients')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all shrink-0 cursor-pointer ${
+                activeMainTab === 'clients'
+                  ? 'bg-blue-600 text-white shadow-sm font-bold'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+              }`}
+            >
+              <Building2 className="w-4 h-4 text-emerald-400" />
+              <span>Clientes & Lojas</span>
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-slate-900/40 text-emerald-200">
+                {stores.length}
+              </span>
+            </button>
+
+            {/* 3. Equipamentos & Patrimônio */}
             <button
               type="button"
               onClick={() => setActiveMainTab('equipments')}
@@ -237,35 +279,7 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
             </button>
 
-            {/* 2. Ordens de Serviço & Estoque */}
-            <button
-              type="button"
-              onClick={() => setActiveMainTab('service_orders')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all shrink-0 cursor-pointer ${
-                activeMainTab === 'service_orders'
-                  ? 'bg-blue-600 text-white shadow-sm font-bold'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
-              }`}
-            >
-              <Wrench className="w-4 h-4" />
-              <span>Ordens de Serviço</span>
-              {(reparoCount > 0 || prontaCount > 0) && (
-                <span className="flex items-center gap-1 text-[10px] font-bold">
-                  {reparoCount > 0 && (
-                    <span className="px-1.5 py-0.2 rounded-full bg-amber-500/30 text-amber-300" title="Em Reparo">
-                      {reparoCount}
-                    </span>
-                  )}
-                  {prontaCount > 0 && (
-                    <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/30 text-emerald-300" title="Prontas">
-                      {prontaCount}
-                    </span>
-                  )}
-                </span>
-              )}
-            </button>
-
-            {/* 3. Relatórios Operacionais */}
+            {/* 4. Relatórios Operacionais */}
             <button
               type="button"
               onClick={() => setActiveMainTab('reports')}
@@ -279,7 +293,7 @@ export const Header: React.FC<HeaderProps> = ({
               <span>Relatórios</span>
             </button>
 
-            {/* 4. Checklist de Formatação */}
+            {/* 5. Checklist de Formatação */}
             <button
               type="button"
               onClick={() => setActiveMainTab('checklist')}

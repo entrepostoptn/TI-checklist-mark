@@ -34,6 +34,8 @@ interface EquipmentContextType {
   // Queries & Stats
   getEquipmentById: (id: string) => Equipment | undefined;
   getEquipmentBySearch: (term: string) => Equipment[];
+  getEquipmentsByStoreId: (storeId: string) => Equipment[];
+  getEquipmentsByClientId: (clientId: string) => Equipment[];
   getMovementsForEquipment: (equipamentoId: string) => MovementRecord[];
   getHardwareChangesForEquipment: (equipamentoId: string) => HardwareChangeRecord[];
   
@@ -65,15 +67,24 @@ export const INITIAL_DEMO_EQUIPMENTS: Equipment[] = [
     numeroSerie: 'BRJ8421-DEL',
     tipo: 'PDV',
     marcaModelo: 'Dell OptiPlex 3050 Micro',
-    lojaOrigem: 'Loja 01 - Centro',
+    marca: 'Dell',
+    modelo: 'OptiPlex 3050 Micro',
+    clienteId: 'cli_mark',
+    clienteNome: 'Mark Security',
+    lojaId: 'store_mark_01',
+    lojaNome: 'Loja 01 — Barueri',
+    lojaOrigem: 'Loja 01 — Barueri',
+    posicaoCaixa: 'PDV 01 (Frente de Caixa)',
     localizacaoAtual: 'LOJA',
     status: 'EM_USO',
+    enderecoIp: '192.168.1.101',
+    sistemaOperacional: 'Windows 10 Pro 64-bit',
+    dataInstalacao: '2024-03-10',
     processador: 'Intel Core i3-7100T 3.40GHz',
     memoriaRamGb: 8,
     armazenamentoValor: 240,
     armazenamentoUnidade: 'GB',
     tipoArmazenamento: 'SSD_SATA',
-    sistemaOperacional: 'Windows 10 Pro 64-bit',
     dataPrimeiroCadastro: '2024-03-10',
     dataUltimaEntrada: '2026-09-15T08:30',
     dataUltimaRetirada: '2026-09-16T17:00',
@@ -90,15 +101,24 @@ export const INITIAL_DEMO_EQUIPMENTS: Equipment[] = [
     numeroSerie: 'BRJ9045-DEL',
     tipo: 'PDV',
     marcaModelo: 'Dell OptiPlex 3050 Micro',
-    lojaOrigem: 'Loja 01 - Centro',
+    marca: 'Dell',
+    modelo: 'OptiPlex 3050 Micro',
+    clienteId: 'cli_mark',
+    clienteNome: 'Mark Security',
+    lojaId: 'store_mark_01',
+    lojaNome: 'Loja 01 — Barueri',
+    lojaOrigem: 'Loja 01 — Barueri',
+    posicaoCaixa: 'PDV 02 (Frente de Caixa)',
     localizacaoAtual: 'ESCRITORIO',
     status: 'EM_MANUTENCAO',
+    enderecoIp: '192.168.1.102',
+    sistemaOperacional: 'Windows 10 Pro 64-bit',
+    dataInstalacao: '2024-03-10',
     processador: 'Intel Core i3-7100T 3.40GHz',
     memoriaRamGb: 8,
     armazenamentoValor: 240,
     armazenamentoUnidade: 'GB',
     tipoArmazenamento: 'SSD_SATA',
-    sistemaOperacional: 'Windows 10 Pro 64-bit',
     dataPrimeiroCadastro: '2024-03-10',
     dataUltimaEntrada: '2026-10-12T09:15',
     dataUltimaManutencao: '2026-10-12',
@@ -109,12 +129,197 @@ export const INITIAL_DEMO_EQUIPMENTS: Equipment[] = [
   },
   {
     id: 'eq_3',
+    nome: 'Computador Administrativo',
+    patrimonio: 'PAT-0055',
+    numeroSerie: 'BRJ3301-DEL',
+    tipo: 'COMPUTADOR',
+    marcaModelo: 'Dell Vostro 3681',
+    marca: 'Dell',
+    modelo: 'Vostro 3681',
+    clienteId: 'cli_mark',
+    clienteNome: 'Mark Security',
+    lojaId: 'store_mark_01',
+    lojaNome: 'Loja 01 — Barueri',
+    lojaOrigem: 'Loja 01 — Barueri',
+    posicaoCaixa: 'Escritório / Retaguarda',
+    localizacaoAtual: 'LOJA',
+    status: 'EM_USO',
+    enderecoIp: '192.168.1.50',
+    sistemaOperacional: 'Windows 11 Pro 64-bit',
+    dataInstalacao: '2024-04-01',
+    processador: 'Intel Core i5-10400 2.90GHz',
+    memoriaRamGb: 16,
+    armazenamentoValor: 512,
+    armazenamentoUnidade: 'GB',
+    tipoArmazenamento: 'SSD_NVME',
+    dataPrimeiroCadastro: '2024-04-01',
+    tecnicoResponsavel: 'Marcos Oliveira',
+    observacoes: 'Estação de faturamento e conciliação do gerente.',
+    createdAt: '2024-04-01T08:00:00Z',
+    updatedAt: '2026-08-10T14:00:00Z',
+  },
+  {
+    id: 'eq_imp_1',
+    nome: 'Impressora Térmica Não Fiscal',
+    patrimonio: 'PAT-IMP-01',
+    numeroSerie: 'EPS-T20X-8821',
+    tipo: 'IMPRESSORA',
+    marcaModelo: 'Epson TM-T20X',
+    marca: 'Epson',
+    modelo: 'TM-T20X USB/Serial',
+    clienteId: 'cli_mark',
+    clienteNome: 'Mark Security',
+    lojaId: 'store_mark_01',
+    lojaNome: 'Loja 01 — Barueri',
+    lojaOrigem: 'Loja 01 — Barueri',
+    posicaoCaixa: 'PDV 01',
+    localizacaoAtual: 'LOJA',
+    status: 'EM_USO',
+    dataInstalacao: '2024-03-10',
+    dataPrimeiroCadastro: '2024-03-10',
+    tecnicoResponsavel: 'Carlos Silva',
+    observacoes: 'Spooler configurado via Impressor SIU em porta COM3 emulada.',
+    createdAt: '2024-03-10T09:00:00Z',
+    updatedAt: '2026-09-01T10:00:00Z',
+  },
+  {
+    id: 'eq_bal_1',
+    nome: 'Balança Computadora de Mesa',
+    patrimonio: 'PAT-BAL-01',
+    numeroSerie: 'TOL-PR5-99120',
+    tipo: 'BALANCA',
+    marcaModelo: 'Toledo Prix 5 Plus',
+    marca: 'Toledo',
+    modelo: 'Prix 5 Plus Ethernet',
+    clienteId: 'cli_mark',
+    clienteNome: 'Mark Security',
+    lojaId: 'store_mark_01',
+    lojaNome: 'Loja 01 — Barueri',
+    lojaOrigem: 'Loja 01 — Barueri',
+    posicaoCaixa: 'Setor Hortifruti / Balcão',
+    localizacaoAtual: 'LOJA',
+    status: 'EM_USO',
+    enderecoIp: '192.168.0.201',
+    dataInstalacao: '2024-03-15',
+    dataPrimeiroCadastro: '2024-03-15',
+    tecnicoResponsavel: 'Carlos Silva',
+    observacoes: 'Carga transmitida via MGV Toledo no código de departamento 01 e etiqueta 251.',
+    createdAt: '2024-03-15T10:00:00Z',
+    updatedAt: '2026-09-10T12:00:00Z',
+  },
+  {
+    id: 'eq_dvr_1',
+    nome: 'DVR de Câmeras CFTV',
+    patrimonio: 'PAT-DVR-01',
+    numeroSerie: 'HIK-16CH-4890',
+    tipo: 'DVR',
+    marcaModelo: 'Hikvision iDS-7216HQHI-M1/S',
+    marca: 'Hikvision',
+    modelo: '16 Canais AcuSense',
+    clienteId: 'cli_mark',
+    clienteNome: 'Mark Security',
+    lojaId: 'store_mark_01',
+    lojaNome: 'Loja 01 — Barueri',
+    posicaoCaixa: 'Rack Sala TI / Segurança',
+    localizacaoAtual: 'LOJA',
+    status: 'EM_USO',
+    enderecoIp: '192.168.1.200',
+    dataInstalacao: '2024-01-20',
+    dataPrimeiroCadastro: '2024-01-20',
+    tecnicoResponsavel: 'Carlos Silva',
+    observacoes: 'HD Seagate SkyHawk 4TB para CFTV. Gravação 24/7 com detecção de movimento.',
+    createdAt: '2024-01-20T10:00:00Z',
+    updatedAt: '2026-08-01T10:00:00Z',
+  },
+  {
+    id: 'eq_sw_1',
+    nome: 'Switch Core Gigabit',
+    patrimonio: 'PAT-SW-01',
+    numeroSerie: 'INT-SG2404-110',
+    tipo: 'SWITCH',
+    marcaModelo: 'Intelbras SG 2404 MR L2+',
+    marca: 'Intelbras',
+    modelo: '24 Portas Gigabit + 4 SFP',
+    clienteId: 'cli_mark',
+    clienteNome: 'Mark Security',
+    lojaId: 'store_mark_01',
+    lojaNome: 'Loja 01 — Barueri',
+    posicaoCaixa: 'Rack Principal Mezanino',
+    localizacaoAtual: 'LOJA',
+    status: 'EM_USO',
+    enderecoIp: '192.168.1.2',
+    dataInstalacao: '2024-01-20',
+    dataPrimeiroCadastro: '2024-01-20',
+    tecnicoResponsavel: 'Carlos Silva',
+    observacoes: 'VLAN 10 para PDVs, VLAN 20 para CFTV e VLAN 30 para Administrativo.',
+    createdAt: '2024-01-20T10:00:00Z',
+    updatedAt: '2026-08-01T10:00:00Z',
+  },
+  {
+    id: 'eq_rt_1',
+    nome: 'Roteador / Firewall Principal',
+    patrimonio: 'PAT-RT-01',
+    numeroSerie: 'MKT-750GR3-771',
+    tipo: 'ROTEADOR',
+    marcaModelo: 'MikroTik RouterBOARD hEX (RB750Gr3)',
+    marca: 'MikroTik',
+    modelo: 'RB750Gr3 RouterOS',
+    clienteId: 'cli_mark',
+    clienteNome: 'Mark Security',
+    lojaId: 'store_mark_01',
+    lojaNome: 'Loja 01 — Barueri',
+    posicaoCaixa: 'Rack Principal Mezanino',
+    localizacaoAtual: 'LOJA',
+    status: 'EM_USO',
+    enderecoIp: '192.168.1.1',
+    dataInstalacao: '2024-01-20',
+    dataPrimeiroCadastro: '2024-01-20',
+    tecnicoResponsavel: 'Carlos Silva',
+    observacoes: 'Dual WAN (Vivo Fibra + Claro contingência) com failover automático.',
+    createdAt: '2024-01-20T10:00:00Z',
+    updatedAt: '2026-08-01T10:00:00Z',
+  },
+  {
+    id: 'eq_osasco_1',
+    nome: 'PDV-01',
+    patrimonio: 'PAT-0061',
+    numeroSerie: 'BRJ5590-DEL',
+    tipo: 'PDV',
+    marcaModelo: 'Dell OptiPlex 3050 Micro',
+    marca: 'Dell',
+    modelo: 'OptiPlex 3050 Micro',
+    clienteId: 'cli_mark',
+    clienteNome: 'Mark Security',
+    lojaId: 'store_mark_02',
+    lojaNome: 'Loja 02 — Osasco',
+    posicaoCaixa: 'Caixa 01',
+    localizacaoAtual: 'LOJA',
+    status: 'EM_USO',
+    processador: 'Intel Core i3-7100T',
+    memoriaRamGb: 8,
+    armazenamentoValor: 240,
+    armazenamentoUnidade: 'GB',
+    tipoArmazenamento: 'SSD_SATA',
+    dataPrimeiroCadastro: '2024-02-15',
+    tecnicoResponsavel: 'Carlos Silva',
+    observacoes: 'Terminal frente de caixa Loja Osasco.',
+    createdAt: '2024-02-15T09:00:00Z',
+    updatedAt: '2026-09-01T10:00:00Z',
+  },
+  {
+    id: 'eq_reserva_1',
     nome: 'PDV-RES-01',
     patrimonio: 'PAT-0099',
     numeroSerie: 'BRJ1182-DEL',
     tipo: 'PDV',
     marcaModelo: 'Dell OptiPlex 3050 Micro',
-    lojaOrigem: 'Estoque Central TI',
+    marca: 'Dell',
+    modelo: 'OptiPlex 3050 Micro',
+    clienteId: 'cli_interno',
+    clienteNome: 'Estoque Central TI',
+    lojaId: 'store_estoque_central',
+    lojaNome: 'Bancada TI & Estoque Central',
+    posicaoCaixa: 'Armário Reserva Bancada',
     localizacaoAtual: 'ESTOQUE',
     status: 'EM_USO',
     processador: 'Intel Core i5-7500T 2.70GHz',
@@ -129,53 +334,6 @@ export const INITIAL_DEMO_EQUIPMENTS: Equipment[] = [
     observacoes: 'Máquina reserva de contingência para frente de caixa. Homologada com MGV e Full PDV.',
     createdAt: '2024-05-15T14:00:00Z',
     updatedAt: '2026-10-08T11:00:00Z',
-  },
-  {
-    id: 'eq_4',
-    nome: 'GER-LJ03',
-    patrimonio: 'PAT-0060',
-    numeroSerie: 'LAT-5490-883',
-    tipo: 'COMPUTADOR',
-    marcaModelo: 'Dell Latitude 5490',
-    lojaOrigem: 'Loja 03 - Shopping',
-    localizacaoAtual: 'LOJA',
-    status: 'EM_USO',
-    processador: 'Intel Core i5-8250U 1.60GHz',
-    memoriaRamGb: 16,
-    armazenamentoValor: 512,
-    armazenamentoUnidade: 'GB',
-    tipoArmazenamento: 'SSD_NVME',
-    sistemaOperacional: 'Windows 11 Pro 64-bit',
-    dataPrimeiroCadastro: '2023-11-20',
-    dataUltimaManutencao: '2026-08-21',
-    tecnicoResponsavel: 'Carlos Silva',
-    observacoes: 'Estação da gerência da Loja Shopping. Microsoft Office 2021 Pro instalado.',
-    createdAt: '2023-11-20T11:00:00Z',
-    updatedAt: '2026-08-21T16:30:00Z',
-  },
-  {
-    id: 'eq_5',
-    nome: 'CX-04',
-    patrimonio: 'PAT-0078',
-    numeroSerie: 'BRJ7732-DEL',
-    tipo: 'PDV',
-    marcaModelo: 'Dell OptiPlex 3050 Micro',
-    lojaOrigem: 'Loja 03 - Shopping',
-    localizacaoAtual: 'ESCRITORIO',
-    status: 'DISPONIVEL_RETIRADA',
-    processador: 'Intel Core i3-7100T 3.40GHz',
-    memoriaRamGb: 8,
-    armazenamentoValor: 240,
-    armazenamentoUnidade: 'GB',
-    tipoArmazenamento: 'SSD_SATA',
-    sistemaOperacional: 'Windows 10 Pro 64-bit',
-    dataPrimeiroCadastro: '2024-04-05',
-    dataUltimaEntrada: '2026-10-10T11:30',
-    dataUltimaManutencao: '2026-10-12',
-    tecnicoResponsavel: 'Carlos Silva',
-    observacoes: 'Homologada 100%. Driver Epson TM-T20X reinstalado e comunicação do Impressor testada. Aguardando retirada.',
-    createdAt: '2024-04-05T08:00:00Z',
-    updatedAt: '2026-10-12T16:00:00Z',
   },
 ];
 
@@ -388,8 +546,12 @@ export const EquipmentProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Add Equipment with duplicate validation and Firestore sync
   const addEquipment = useCallback((data: Omit<Equipment, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const cleanPatrimonio = data.patrimonio.trim().toUpperCase();
-    const cleanSerial = data.numeroSerie.trim().toUpperCase();
+    let cleanPatrimonio = (data.patrimonio || '').trim().toUpperCase();
+    if (!cleanPatrimonio) {
+      cleanPatrimonio = `EQ-${String(equipments.length + 101).padStart(4, '0')}`;
+    }
+
+    const cleanSerial = (data.numeroSerie || '').trim().toUpperCase();
 
     // Check duplicate patrimonio
     const existsPatrimonio = equipments.some(
@@ -398,26 +560,28 @@ export const EquipmentProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (existsPatrimonio) {
       return {
         success: false,
-        error: `Já existe um equipamento cadastrado com o patrimônio "${data.patrimonio}".`,
+        error: `Já existe um equipamento cadastrado com o código/patrimônio "${cleanPatrimonio}".`,
       };
     }
 
-    // Check duplicate serial number
-    const existsSerial = equipments.some(
-      (e) => e.numeroSerie.trim().toUpperCase() === cleanSerial
-    );
-    if (existsSerial) {
-      return {
-        success: false,
-        error: `Já existe um equipamento cadastrado com o número de série / Service Tag "${data.numeroSerie}".`,
-      };
+    // Check duplicate serial number (only if provided and not empty)
+    if (cleanSerial) {
+      const existsSerial = equipments.some(
+        (e) => e.numeroSerie && e.numeroSerie.trim().toUpperCase() === cleanSerial
+      );
+      if (existsSerial) {
+        return {
+          success: false,
+          error: `Já existe um equipamento cadastrado com o número de série / Service Tag "${data.numeroSerie}".`,
+        };
+      }
     }
 
     const newEquipment: Equipment = {
       ...data,
       id: `eq_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       patrimonio: cleanPatrimonio,
-      numeroSerie: cleanSerial,
+      numeroSerie: cleanSerial || undefined,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -592,10 +756,23 @@ export const EquipmentProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       (e) =>
         e.nome.toLowerCase().includes(clean) ||
         e.patrimonio.toLowerCase().includes(clean) ||
-        e.numeroSerie.toLowerCase().includes(clean) ||
-        e.lojaOrigem.toLowerCase().includes(clean) ||
-        e.marcaModelo.toLowerCase().includes(clean)
+        (e.numeroSerie && e.numeroSerie.toLowerCase().includes(clean)) ||
+        (e.lojaNome && e.lojaNome.toLowerCase().includes(clean)) ||
+        (e.lojaOrigem && e.lojaOrigem.toLowerCase().includes(clean)) ||
+        (e.clienteNome && e.clienteNome.toLowerCase().includes(clean)) ||
+        (e.marcaModelo && e.marcaModelo.toLowerCase().includes(clean)) ||
+        (e.posicaoCaixa && e.posicaoCaixa.toLowerCase().includes(clean)) ||
+        (e.enderecoIp && e.enderecoIp.toLowerCase().includes(clean)) ||
+        e.tipo.toLowerCase().includes(clean)
     );
+  }, [equipments]);
+
+  const getEquipmentsByStoreId = useCallback((storeId: string) => {
+    return equipments.filter((e) => e.lojaId === storeId || e.lojaOrigem === storeId);
+  }, [equipments]);
+
+  const getEquipmentsByClientId = useCallback((clientId: string) => {
+    return equipments.filter((e) => e.clienteId === clientId);
   }, [equipments]);
 
   const getMovementsForEquipment = useCallback((equipamentoId: string) => {
@@ -687,6 +864,8 @@ export const EquipmentProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         addHardwareChange,
         getEquipmentById,
         getEquipmentBySearch,
+        getEquipmentsByStoreId,
+        getEquipmentsByClientId,
         getMovementsForEquipment,
         getHardwareChangesForEquipment,
         stats,

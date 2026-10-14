@@ -14,6 +14,7 @@ import { db, auth } from '../firebase/config';
 import { Equipment, MovementRecord, HardwareChangeRecord } from '../types/equipment';
 import { ServiceOrder } from '../types/serviceOrder';
 import { SavedChecklistRecord, CompanyConfig } from '../types/checklist';
+import { Client, Store } from '../types/client';
 
 export enum OperationType {
   CREATE = 'create',
@@ -114,6 +115,39 @@ export async function checkAndInitializeDatabase(
     return true;
   } catch (err) {
     console.warn('Falha ao inicializar dados no Firestore (modo offline ou permissão)', err);
+    return false;
+  }
+}
+
+export async function checkAndInitializeClientsAndStores(
+  initialClients: Client[],
+  initialStores: Store[]
+): Promise<boolean> {
+  const configDocRef = doc(db, 'system_config', 'clients_stores_init');
+  try {
+    const snap = await getDoc(configDocRef);
+    if (snap.exists() && snap.data()?.initialized) {
+      return true;
+    }
+
+    const batch = writeBatch(db);
+    for (const cli of initialClients) {
+      batch.set(doc(db, 'clients', cli.id), cli);
+    }
+    for (const st of initialStores) {
+      batch.set(doc(db, 'stores', st.id), st);
+    }
+
+    batch.set(configDocRef, {
+      initialized: true,
+      seededAt: new Date().toISOString(),
+      updatedAt: serverTimestamp(),
+    });
+
+    await batch.commit();
+    return true;
+  } catch (err) {
+    console.warn('Falha ao inicializar clientes/lojas no Firestore (modo offline ou permissão)', err);
     return false;
   }
 }
@@ -226,9 +260,87 @@ export function subscribeToChecklistRecords(
   );
 }
 
+export function subscribeToClients(
+  onData: (clients: Client[]) => void,
+  onError?: (err: Error) => void
+): Unsubscribe {
+  const path = 'clients';
+  return onSnapshot(
+    collection(db, path),
+    (snapshot) => {
+      const items: Client[] = [];
+      snapshot.forEach((docSnap) => {
+        items.push({ id: docSnap.id, ...(docSnap.data() as Omit<Client, 'id'>) });
+      });
+      onData(items);
+    },
+    (error) => {
+      onError?.(error);
+      handleFirestoreError(error, OperationType.GET, path);
+    }
+  );
+}
+
+export function subscribeToStores(
+  onData: (stores: Store[]) => void,
+  onError?: (err: Error) => void
+): Unsubscribe {
+  const path = 'stores';
+  return onSnapshot(
+    collection(db, path),
+    (snapshot) => {
+      const items: Store[] = [];
+      snapshot.forEach((docSnap) => {
+        items.push({ id: docSnap.id, ...(docSnap.data() as Omit<Store, 'id'>) });
+      });
+      onData(items);
+    },
+    (error) => {
+      onError?.(error);
+      handleFirestoreError(error, OperationType.GET, path);
+    }
+  );
+}
+
 // -------------------------------------------------------------
 // Direct Mutations (Write / Delete)
 // -------------------------------------------------------------
+export async function syncSaveClient(client: Client): Promise<void> {
+  const path = `clients/${client.id}`;
+  try {
+    await setDoc(doc(db, 'clients', client.id), client, { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+export async function syncDeleteClient(id: string): Promise<void> {
+  const path = `clients/${id}`;
+  try {
+    await deleteDoc(doc(db, 'clients', id));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+
+export async function syncSaveStore(store: Store): Promise<void> {
+  const path = `stores/${store.id}`;
+  try {
+    await setDoc(doc(db, 'stores', store.id), store, { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+export async function syncDeleteStore(id: string): Promise<void> {
+  const path = `stores/${id}`;
+  try {
+    await deleteDoc(doc(db, 'stores', id));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+
 export async function syncSaveEquipment(equipment: Equipment): Promise<void> {
   const path = `equipments/${equipment.id}`;
   try {

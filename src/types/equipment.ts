@@ -1,6 +1,17 @@
 import { MachineType } from './checklist';
 
-export type EquipmentType = 'PDV' | 'COMPUTADOR' | 'NOTEBOOK' | 'OUTRO';
+export type EquipmentType =
+  | 'PDV'
+  | 'COMPUTADOR'
+  | 'NOTEBOOK'
+  | 'SERVIDOR'
+  | 'IMPRESSORA'
+  | 'BALANCA'
+  | 'CAMERA'
+  | 'DVR'
+  | 'SWITCH'
+  | 'ROTEADOR'
+  | 'OUTRO';
 
 export type EquipmentLocation =
   | 'LOJA'
@@ -10,33 +21,47 @@ export type EquipmentLocation =
   | 'OUTRO';
 
 export type EquipmentStatus =
-  | 'EM_USO'                 // Em uso na loja
-  | 'AGUARDANDO_MANUTENCAO'  // Aguardando manutenção no escritório
+  | 'EM_USO'                 // Em uso na loja / Ativo
+  | 'AGUARDANDO_MANUTENCAO'  // Aguardando manutenção
   | 'EM_MANUTENCAO'          // Em manutenção na bancada
   | 'DISPONIVEL_RETIRADA'    // Disponível para retirada / pronto
   | 'RETIRADO'               // Retirado / a caminho da loja
-  | 'DESATIVADO';            // Desativado / sucata
+  | 'DESATIVADO';            // Desativado / Baixado / Sucata
 
 export type StorageType = 'SSD_SATA' | 'SSD_NVME' | 'HD';
 
 export interface Equipment {
   id: string;                      // Identificador único interno
-  nome: string;                    // Nome padronizado (Ex: PDV-01, EST-03)
-  patrimonio: string;              // Código interno / Patrimônio único
-  numeroSerie: string;             // Service Tag / Serial number único
-  tipo: EquipmentType;             // PDV, COMPUTADOR, NOTEBOOK, OUTRO
-  marcaModelo: string;             // Ex: Dell OptiPlex 3050, Bematech RC-8400
-  lojaOrigem: string;              // Loja ou setor de origem (Ex: Loja 01 - Centro)
+  nome: string;                    // Nome padronizado (Ex: PDV-01, Computador ADM, Balança Prix 5)
+  patrimonio: string;              // Código interno único gerado automaticamente
+  numeroSerie?: string;            // Service Tag / Serial number único
+  tipo: EquipmentType;             // PDV, COMPUTADOR, IMPRESSORA, BALANCA, etc.
+  marcaModelo?: string;            // Ex: Dell OptiPlex 3050, Bematech RC-8400, Toledo Prix 5 Plus
+  marca?: string;                  // Marca isolada (Ex: Toledo, Epson, Dell)
+  modelo?: string;                 // Modelo isolado (Ex: Prix 5 Plus, TM-T20X)
+  
+  // Vínculo Estrutural com Cliente e Loja
+  clienteId?: string;              // ID do cliente matriz
+  clienteNome?: string;            // Razão social / Nome fantasia do cliente
+  lojaId?: string;                 // ID da loja/filial onde está instalado
+  lojaNome?: string;               // Nome da loja (Ex: Loja 01 — Barueri)
+  lojaOrigem?: string;             // Compatibilidade retroativa
+  posicaoCaixa?: string;           // Número do caixa ou posição física (Ex: PDV 01, Balcão Açougue, Sala TI)
+  
   localizacaoAtual: EquipmentLocation; // Onde o equipamento está fisicamente
   status: EquipmentStatus;         // Status operacional atual
   
-  // Especificações de Hardware
-  processador: string;             // Ex: Intel Core i3-7100 3.90GHz
-  memoriaRamGb: number;            // Memória RAM em GB (Ex: 8, 16)
-  armazenamentoValor: number;      // Tamanho do armazenamento (Ex: 240, 500, 1)
-  armazenamentoUnidade: 'GB' | 'TB';// Unidade (GB ou TB)
-  tipoArmazenamento: StorageType;  // HD, SSD SATA, SSD NVMe
-  sistemaOperacional: string;      // Ex: Windows 10 Pro 64-bit
+  // Dados de Rede e Sistema (adaptáveis ao tipo de equipamento)
+  enderecoIp?: string;             // Endereço IP quando aplicável (Ex: 192.168.0.201)
+  sistemaOperacional?: string;     // Ex: Windows 10 Pro 64-bit, Linux, Firmware
+  dataInstalacao?: string;         // Data da instalação quando conhecida (YYYY-MM-DD)
+
+  // Especificações de Hardware (opcionais para dispositivos como balanças, impressoras, switches)
+  processador?: string;            // Ex: Intel Core i3-7100 3.90GHz
+  memoriaRamGb?: number;           // Memória RAM em GB (Ex: 8, 16)
+  armazenamentoValor?: number;     // Tamanho do armazenamento (Ex: 240, 500, 1)
+  armazenamentoUnidade?: 'GB' | 'TB';// Unidade (GB ou TB)
+  tipoArmazenamento?: StorageType; // HD, SSD SATA, SSD NVMe
   
   // Datas e auditoria
   dataPrimeiroCadastro: string;    // Data do primeiro cadastro (YYYY-MM-DD)
@@ -44,7 +69,7 @@ export interface Equipment {
   dataUltimaRetirada?: string;     // Data da última retirada (YYYY-MM-DDTHH:mm)
   dataUltimaManutencao?: string;   // Data da última manutenção concluída (YYYY-MM-DD)
   tecnicoResponsavel?: string;     // Último técnico que atendeu
-  observacoes?: string;            // Notas gerais
+  observacoes?: string;            // Observações técnicas gerais
   
   createdAt: string;
   updatedAt: string;
