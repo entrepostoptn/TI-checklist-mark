@@ -16,6 +16,18 @@ jobs:
       - name: Checkout do repositório
         uses: actions/checkout@v4
 
+      - name: Validar Segredos do FTP
+        run: |
+          if [ -z "${{ secrets.FTP_SERVER }}" ] || [ -z "${{ secrets.FTP_USERNAME }}" ] || [ -z "${{ secrets.FTP_PASSWORD }}" ]; then
+            echo "::error::Os segredos FTP_SERVER, FTP_USERNAME ou FTP_PASSWORD não foram configurados nas configurações do repositório no GitHub (Settings -> Secrets and variables -> Actions)."
+            echo "Configure os seguintes segredos no GitHub:"
+            echo "- FTP_SERVER (ex: ftp.seudominio.com ou IP do servidor Hostinger)"
+            echo "- FTP_USERNAME (ex: u123456789 ou seu usuário FTP)"
+            echo "- FTP_PASSWORD (sua senha de FTP da Hostinger)"
+            echo "Opcional: FTP_SERVER_DIR (padrão: public_html/)"
+            exit 1
+          fi
+
       - name: Instalar Node.js
         uses: actions/setup-node@v4
         with:
@@ -28,12 +40,18 @@ jobs:
       - name: Gerar build de produção (Vite)
         run: npm run build
 
+      - name: Garantir .htaccess em dist
+        run: |
+          cp public/.htaccess dist/.htaccess 2>/dev/null || cp .htaccess dist/.htaccess 2>/dev/null || true
+
       - name: Enviar arquivos (dist/) para a Hostinger via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ${{ secrets.FTP_PROTOCOL || 'ftp' }}
+          port: ${{ secrets.FTP_PORT || 21 }}
           local-dir: ./dist/
-          server-dir: ./public_html/
+          server-dir: ${{ secrets.FTP_SERVER_DIR || 'public_html/' }}
           dangerous-clean-slate: false

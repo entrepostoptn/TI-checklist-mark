@@ -25,6 +25,9 @@ import {
   Wifi,
   WifiOff,
   RefreshCw,
+  Monitor,
+  Smartphone,
+  QrCode,
 } from 'lucide-react';
 
 export type MainAppTab = 'equipments' | 'service_orders' | 'reports' | 'checklist';
@@ -38,6 +41,7 @@ interface HeaderProps {
   onOpenHistory: () => void;
   onOpenCommands: () => void;
   onOpenSyncStatus: () => void;
+  onOpenMultiDevice: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -49,6 +53,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenHistory,
   onOpenCommands,
   onOpenSyncStatus,
+  onOpenMultiDevice,
 }) => {
   const {
     machine,
@@ -151,8 +156,19 @@ export const Header: React.FC<HeaderProps> = ({
                 <h1 className="font-bold text-sm sm:text-base tracking-tight text-white leading-tight">
                   Checklist & Gestão de TI
                 </h1>
-                <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+                <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5 flex-wrap">
                   <span className="text-slate-300 font-medium">Equipamentos, OS & Relatórios</span>
+                  <button
+                    type="button"
+                    onClick={onOpenMultiDevice}
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30 transition-all cursor-pointer"
+                    title="Acesse este sistema pelo Computador ou Celular (Clique para abrir QR Code e instruções)"
+                  >
+                    <Monitor className="w-3 h-3 text-blue-400" />
+                    <span>+</span>
+                    <Smartphone className="w-3 h-3 text-emerald-400" />
+                    <span>PC & Celular</span>
+                  </button>
                   {activeMainTab === 'checklist' && machine.identificacao && (
                     <>
                       <span>•</span>
@@ -165,6 +181,18 @@ export const Header: React.FC<HeaderProps> = ({
 
             {/* Cloud badge & profile mobile */}
             <div className="lg:hidden flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={onOpenMultiDevice}
+                className="p-1.5 text-emerald-400 hover:text-white rounded-lg hover:bg-slate-800 border border-emerald-500/30 bg-emerald-500/10 cursor-pointer"
+                title="Acesso por Computador e Celular (QR Code)"
+              >
+                <div className="flex items-center -space-x-0.5">
+                  <Monitor className="w-3 h-3 text-blue-400" />
+                  <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
+                </div>
+              </button>
+
               {getCloudSyncBadge()}
 
               <button
@@ -329,6 +357,20 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <Shield className="w-3.5 h-3.5" />
               <span>{userRole === 'GESTOR' ? 'Perfil: Gestor' : 'Perfil: Técnico'}</span>
+            </button>
+
+            {/* Multi-Device Button (Computador & Celular) */}
+            <button
+              type="button"
+              onClick={onOpenMultiDevice}
+              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 transition-all cursor-pointer"
+              title="Acesso por Computador e Celular (QR Code, PWA e sincronização)"
+            >
+              <div className="flex items-center -space-x-0.5">
+                <Monitor className="w-3.5 h-3.5 text-blue-400" />
+                <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
+              </div>
+              <span>PC & Celular</span>
             </button>
 
             {/* Global Tools */}

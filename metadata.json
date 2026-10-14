@@ -1,6 +1,6 @@
 {
   "name": "Checklist TI - Gestão de Equipamentos, Manutenção & OS",
-  "description": "Sistema completo de Checklist TI para preparação de computadores, controle de patrimônio, histórico de manutenção, peças, ordens de serviço e relatórios operacionais.",
+  "description": "Sistema de gestão e checklist de TI acessível por computador e celular com sincronização em tempo real. Controle patrimonial, ordens de serviço, peças e relatórios operacionais.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

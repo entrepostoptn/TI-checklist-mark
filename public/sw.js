@@ -1,8 +1,8 @@
 // Service Worker para Checklist TI (PWA)
 // Versão do cache de assets estáticos da aplicação
-const CACHE_NAME = 'checklist-ti-v2';
+const CACHE_NAME = 'checklist-ti-v3';
 
-// Lista de rotas / assets essenciais para cache offline inicial
+// Lista de rotas essenciais para cache offline inicial
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
@@ -10,28 +10,38 @@ const PRECACHE_ASSETS = [
 ];
 
 self.addEventListener('install', (event) => {
-  // Ativação imediata para nova versão
+  // Força ativação imediata sem esperar fechamento de abas
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(PRECACHE_ASSETS).catch((err) => {
-        console.warn('Falha no pré-cache:', err);
+        console.warn('Falha no pré-cache inicial:', err);
       });
     })
   );
 });
 
 self.addEventListener('activate', (event) => {
-  // Limpa versões antigas do cache para que novas publicações sejam aplicadas de imediato
+  // Limpa todas as versões antigas do cache para que novas publicações sejam aplicadas de imediato
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
           .filter((name) => name !== CACHE_NAME)
-          .map((name) => caches.delete(name))
+          .map((name) => {
+            console.log('Removendo cache antigo:', name);
+            return caches.delete(name);
+          })
       );
     }).then(() => self.clients.claim())
   );
+});
+
+// Suporte a mensagens do cliente (ex: SKIP_WAITING)
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('fetch', (event) => {
@@ -51,9 +61,36 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Estratégia Network-First para arquivos da aplicação (HTML, JS, CSS):
-  // Busca na rede primeiro. Se obtiver sucesso, atualiza o cache e entrega o código novo.
-  // Se estiver offline ou a rede falhar, utiliza o cache local.
+  // Para navegação HTML (páginas): Network-First obrigatório com cache: 'no-store'
+  // Isso impede que o browser use o disco local para index.html quando há conexão ativa
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request, { cache: 'no-store' })
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, responseToCache);
+            });
+          }
+          return networkResponse;
+        })
+        .catch(async () => {
+          const cachedResponse = await caches.match(request);
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          const indexFallback = await caches.match('/index.html');
+          if (indexFallback) {
+            return indexFallback;
+          }
+          return new Response('Modo Offline - Checklist TI', { status: 503, statusText: 'Offline' });
+        })
+    );
+    return;
+  }
+
+  // Para assets estáticos (JS com hash, CSS, imagens): Network-first com fallback de cache
   event.respondWith(
     fetch(request)
       .then((networkResponse) => {
@@ -66,13 +103,9 @@ self.addEventListener('fetch', (event) => {
         return networkResponse;
       })
       .catch(async () => {
-        // Fallback offline a partir do cache
         const cachedResponse = await caches.match(request);
         if (cachedResponse) {
           return cachedResponse;
-        }
-        if (request.mode === 'navigate') {
-          return caches.match('/index.html');
         }
         return new Response('Offline', { status: 503, statusText: 'Offline' });
       })

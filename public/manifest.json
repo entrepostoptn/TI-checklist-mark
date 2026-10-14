@@ -1,7 +1,7 @@
 {
-  "name": "Checklist TI - Preparação de Computadores",
+  "name": "Checklist TI - Gestão de Equipamentos & OS",
   "short_name": "Checklist TI",
-  "description": "Aplicativo operacional para técnicos de TI realizarem formatação, configuração e homologação de computadores e PDVs de lojas.",
+  "description": "Sistema de gestão e checklist de TI acessível por computador e celular com sincronização em tempo real.",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#0f172a",
@@ -12,5 +12,6 @@
       "sizes": "any",
       "type": "image/svg+xml"
     }
-  ]
+  ],
+  "categories": ["business", "productivity", "utilities"]
 }

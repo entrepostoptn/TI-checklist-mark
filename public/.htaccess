@@ -1,33 +1,44 @@
-# ----------------------------------------------------------------------
-# Configuração para Hostinger / Apache / LiteSpeed (SPA React - Produção)
-# ----------------------------------------------------------------------
+# ==============================================================================
+# Configuração para Hostinger / Apache / LiteSpeed (SPA React Produção)
+# ==============================================================================
 
-# 1. Definir index.html como documento padrão
 DirectoryIndex index.html
-
-# 2. Desabilitar listagem de diretório
 Options -Indexes +FollowSymLinks
 
-# 3. Tratamento de rotas e SPA Router
+# SPA Fallback
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
-
-  # Favicon e manifest
-  RewriteRule ^favicon\.ico$ - [L]
-  RewriteRule ^favicon\.svg$ - [L]
-  RewriteRule ^manifest\.json$ - [L]
-
-  # Se o arquivo ou diretório existir fisicamente, serve direto
-  RewriteCond %{REQUEST_FILENAME} -f [OR]
-  RewriteCond %{REQUEST_FILENAME} -d
-  RewriteRule ^ - [L]
-
-  # Se não existir, envia para index.html
-  RewriteRule ^ index.html [L]
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
 </IfModule>
 
-# 4. Tipos MIME para arquivos estáticos
+# Controle RÍGIDO de Cache (Garante que novas atualizações subam imediatamente)
+<IfModule mod_headers.c>
+  # NUNCA armazenar em cache páginas HTML, Service Worker ou Manifest
+  <FilesMatch "\.(html|htm)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate, max-age=0"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+
+  <FilesMatch "(sw\.js|service-worker\.js|manifest\.json)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate, max-age=0"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+
+  # Arquivos com hash na pasta assets podem ter cache longo e seguro (1 ano)
+  <FilesMatch "\.(js|css|webp|png|jpg|jpeg|svg|woff|woff2)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+
+  Header set X-Content-Type-Options "nosniff"
+</IfModule>
+
+# Tipos MIME
 <IfModule mod_mime.c>
   AddType image/x-icon ico
   AddType image/svg+xml svg svgz
@@ -35,14 +46,11 @@ Options -Indexes +FollowSymLinks
   AddType text/css css
   AddType application/json json
   AddType application/manifest+json webmanifest
+  AddType font/woff woff
+  AddType font/woff2 woff2
 </IfModule>
 
-# 5. Compressão
+# Compressão Gzip
 <IfModule mod_deflate.c>
   AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css application/javascript application/json image/svg+xml
-</IfModule>
-
-# 6. Headers de segurança
-<IfModule mod_headers.c>
-  Header set X-Content-Type-Options "nosniff"
 </IfModule>

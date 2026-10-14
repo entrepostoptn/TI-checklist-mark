@@ -1,44 +1,73 @@
-# ----------------------------------------------------------------------
-# Configuração para Hostinger / Apache / LiteSpeed (SPA React)
-# ----------------------------------------------------------------------
+# ==============================================================================
+# Configuração para Hostinger / Apache / LiteSpeed (SPA React + PWA)
+# ==============================================================================
 
-# 1. Definir arquivos de índice padrão
+# 1. Definir arquivo padrão
 DirectoryIndex index.html
 
 # 2. Desabilitar listagem de diretório
 Options -Indexes +FollowSymLinks
 
-# 3. Reescrever requisições para a pasta dist se ela existir no repositório
+# 3. Reescrever requisições (SPA Routing e suporte a dist/)
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
 
-  # Favicon, assets e manifest diretos
+  # Favicon, assets de raiz e manifest
   RewriteRule ^favicon\.ico$ - [L]
   RewriteRule ^favicon\.svg$ - [L]
   RewriteRule ^manifest\.json$ - [L]
+  RewriteRule ^sw\.js$ - [L]
 
-  # Se o arquivo ou diretório solicitado existir fisicamente na raiz, serve direto
+  # Se a pasta dist existir (ex: repositório clonado diretamente na raiz do servidor):
+  # Redireciona a rota raiz e assets para dentro de dist/
+  RewriteCond %{DOCUMENT_ROOT}/dist/index.html -f [OR]
+  RewriteCond dist/index.html -f
+  RewriteCond %{REQUEST_URI} ^/$ [OR]
+  RewriteCond %{REQUEST_URI} ^/index\.html$
+  RewriteRule ^(.*)$ dist/index.html [L]
+
+  RewriteCond %{DOCUMENT_ROOT}/dist/$1 -f [OR]
+  RewriteCond dist/$1 -f
+  RewriteCond %{REQUEST_URI} !^/dist/
+  RewriteRule ^(.*)$ dist/$1 [L]
+
+  # Se o arquivo ou pasta solicitada existir fisicamente e não for o index.html da raiz, serve direto
+  RewriteCond %{REQUEST_URI} !^/index\.html$
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
 
-  # Se existir dentro da pasta dist, reescreve internamente para dist/
-  RewriteCond %{REQUEST_URI} !^/dist/
-  RewriteCond dist/$1 -f [OR]
-  RewriteCond dist/$1 -d
-  RewriteRule ^(.*)$ dist/$1 [L]
-
-  # SPA Fallback: Se a pasta dist existir, serve dist/index.html
-  RewriteCond %{REQUEST_URI} !^/dist/
+  # SPA Fallback: Se existir dist/index.html, envia para ela; senão envia para index.html raiz
+  RewriteCond %{DOCUMENT_ROOT}/dist/index.html -f [OR]
   RewriteCond dist/index.html -f
   RewriteRule ^ dist/index.html [L]
 
-  # SPA Fallback padrão na raiz
   RewriteRule ^ index.html [L]
 </IfModule>
 
-# 4. Tipos MIME para arquivos estáticos modernos
+# 4. Controle RÍGIDO de Cache (Garante que novas atualizações subam imediatamente para os usuários)
+<IfModule mod_headers.c>
+  # NUNCA armazenar em cache páginas HTML, Service Worker ou Manifest
+  <FilesMatch "\.(html|htm)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate, max-age=0"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+
+  <FilesMatch "(sw\.js|service-worker\.js|manifest\.json)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate, max-age=0"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+
+  # Arquivos com hash na pasta assets podem ter cache longo e seguro (1 ano)
+  <FilesMatch "\.(js|css|webp|png|jpg|jpeg|svg|woff|woff2)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+</IfModule>
+
+# 5. Tipos MIME para arquivos estáticos modernos
 <IfModule mod_mime.c>
   AddType image/x-icon ico
   AddType image/svg+xml svg svgz
@@ -46,14 +75,16 @@ Options -Indexes +FollowSymLinks
   AddType text/css css
   AddType application/json json
   AddType application/manifest+json webmanifest
+  AddType font/woff woff
+  AddType font/woff2 woff2
 </IfModule>
 
-# 5. Compressão Gzip/Deflate
+# 6. Compressão Gzip/Deflate
 <IfModule mod_deflate.c>
   AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css application/javascript application/json image/svg+xml
 </IfModule>
 
-# 6. Headers de segurança
+# 7. Headers de segurança
 <IfModule mod_headers.c>
   Header set X-Content-Type-Options "nosniff"
 </IfModule>
