@@ -7,6 +7,7 @@ import { MachineType } from '../types/checklist';
 import { ServiceOrderFastModal } from './ServiceOrderFastModal';
 import { ServiceOrderModal } from './ServiceOrderModal';
 import { ServiceOrderPrintBadge } from './ServiceOrderPrintBadge';
+import { ConfirmModal } from './ConfirmModal';
 import { formatDateBR, formatDateTimeBR } from '../utils/dateFormatter';
 import {
   Wrench,
@@ -73,6 +74,13 @@ export const ServiceOrderManager: React.FC<ServiceOrderManagerProps> = ({
   const [isLegacyEditModalOpen, setIsLegacyEditModalOpen] = useState(false);
   const [orderToEdit, setOrderToEdit] = useState<ServiceOrder | null>(null);
   const [orderToPrint, setOrderToPrint] = useState<ServiceOrder | null>(null);
+  const [orderToDelete, setOrderToDelete] = useState<ServiceOrder | null>(null);
+
+  const handleConfirmDeleteOrder = () => {
+    if (!orderToDelete) return;
+    deleteOrder(orderToDelete.id);
+    setOrderToDelete(null);
+  };
 
   // Field Technician Filters (Item 7 do prompt)
   const [clientFilter, setClientFilter] = useState<string>('ALL');
@@ -730,11 +738,7 @@ export const ServiceOrderManager: React.FC<ServiceOrderManagerProps> = ({
                     {/* Delete Order */}
                     <button
                       type="button"
-                      onClick={() => {
-                        if (window.confirm(`Deseja remover a ordem de serviço "${order.numeroOs}"?`)) {
-                          deleteOrder(order.id);
-                        }
-                      }}
+                      onClick={() => setOrderToDelete(order)}
                       className="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
                       title="Excluir OS"
                     >
@@ -776,6 +780,17 @@ export const ServiceOrderManager: React.FC<ServiceOrderManagerProps> = ({
           onClose={() => setOrderToPrint(null)}
         />
       )}
+
+      {/* Confirmação de Exclusão de OS (In-App) */}
+      <ConfirmModal
+        isOpen={Boolean(orderToDelete)}
+        title={`Excluir Ordem de Serviço "${orderToDelete?.numeroOs}"?`}
+        message={`Tem certeza que deseja remover esta ordem de serviço (${orderToDelete?.clienteNome || 'Cliente'} - ${orderToDelete?.lojaNome || 'Loja'})?`}
+        confirmText="Excluir OS"
+        onConfirm={handleConfirmDeleteOrder}
+        onCancel={() => setOrderToDelete(null)}
+        variant="danger"
+      />
     </div>
   );
 };

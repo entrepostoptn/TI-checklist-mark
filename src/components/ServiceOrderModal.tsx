@@ -183,14 +183,17 @@ export const ServiceOrderModal: React.FC<ServiceOrderModalProps> = ({
     }
   }, [orderToEdit, initialEquipment, isOpen]);
 
+  const [formError, setFormError] = useState<string | null>(null);
+
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!identificacao.trim() || !lojaOrigem.trim()) {
-      alert('Por favor, informe a identificação da máquina e a loja de origem.');
+      setFormError('Por favor, informe a identificação da máquina e a loja de origem.');
       return;
     }
+    setFormError(null);
 
     const orderPayload = {
       equipamentoId: selectedEquipmentId || undefined,
@@ -330,6 +333,13 @@ export const ServiceOrderModal: React.FC<ServiceOrderModalProps> = ({
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
+          {formError && (
+            <div className="p-3 bg-red-50 border border-red-300 text-red-800 rounded-xl text-xs font-semibold flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+              <span>{formError}</span>
+            </div>
+          )}
+
           {/* 1. SELEÇÃO E VINCULAÇÃO DE EQUIPAMENTO */}
           <div className="p-4 rounded-xl bg-blue-50/60 border border-blue-200 space-y-3">
             <div className="flex items-center justify-between">

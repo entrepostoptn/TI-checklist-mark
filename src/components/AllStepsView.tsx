@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useChecklist } from '../context/ChecklistContext';
 import { isStepApplicable, isItemApplicable } from '../utils/checklistGenerator';
 import { ChecklistItem } from './ChecklistItem';
@@ -25,6 +25,8 @@ export const AllStepsView: React.FC = () => {
     syncFinalTestFromSteps,
     setViewMode,
   } = useChecklist();
+
+  const [copiedUtil, setCopiedUtil] = useState(false);
 
   return (
     <div className="space-y-8 pb-10">
@@ -125,12 +127,15 @@ export const AllStepsView: React.FC = () => {
                     type="button"
                     onClick={() => {
                       navigator.clipboard.writeText(`cmd.exe /c mkdir "${config.pastaUtilMs}"`);
-                      alert(`Comando copiado: cmd.exe /c mkdir "${config.pastaUtilMs}"`);
+                      setCopiedUtil(true);
+                      setTimeout(() => setCopiedUtil(false), 2000);
                     }}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] rounded bg-blue-600 text-white font-mono"
+                    className={`inline-flex items-center gap-1 px-2.5 py-1 text-[11px] rounded font-mono transition-colors ${
+                      copiedUtil ? 'bg-emerald-600 text-white' : 'bg-blue-600 hover:bg-blue-500 text-white'
+                    }`}
                   >
                     <Terminal className="w-3 h-3" />
-                    Copiar mkdir
+                    {copiedUtil ? 'Copiado!' : 'Copiar mkdir'}
                   </button>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">

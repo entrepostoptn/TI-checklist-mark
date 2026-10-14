@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useChecklist } from '../context/ChecklistContext';
 import { CompanyConfig } from '../types/checklist';
+import { ConfirmModal } from './ConfirmModal';
 import {
   X,
   RotateCcw,
@@ -20,6 +21,7 @@ interface SettingsModalProps {
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const { config, updateConfig, resetConfigToDefaults } = useChecklist();
   const [formData, setFormData] = useState<CompanyConfig>(config);
+  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
 
   useEffect(() => {
     setFormData(config);
@@ -34,10 +36,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
   };
 
   const handleReset = () => {
-    if (window.confirm('Deseja restaurar todos os parâmetros para os padrões iniciais da empresa?')) {
-      resetConfigToDefaults();
-      onClose();
-    }
+    setIsResetConfirmOpen(true);
+  };
+
+  const handleConfirmReset = () => {
+    resetConfigToDefaults();
+    setIsResetConfirmOpen(false);
+    onClose();
   };
 
   return (
@@ -257,6 +262,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           </div>
         </form>
       </div>
+
+      {/* Confirmação de Restauração de Parâmetros (In-App) */}
+      <ConfirmModal
+        isOpen={isResetConfirmOpen}
+        title="Restaurar Parâmetros Iniciais?"
+        message="Deseja restaurar todos os parâmetros e padrões técnicos da empresa para as configurações originais de fábrica?"
+        confirmText="Restaurar Padrões"
+        onConfirm={handleConfirmReset}
+        onCancel={() => setIsResetConfirmOpen(false)}
+        variant="warning"
+      />
     </div>
   );
 };

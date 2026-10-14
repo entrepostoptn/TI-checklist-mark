@@ -102,6 +102,7 @@ export const ServiceOrderFastModal: React.FC<ServiceOrderFastModalProps> = ({
   const [pecasTrocadas, setPecasTrocadas] = useState('');
   const [observacoes, setObservacoes] = useState('');
   const [status, setStatus] = useState<ServiceOrderStatus>('ABERTA');
+  const [formError, setFormError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -189,10 +190,11 @@ export const ServiceOrderFastModal: React.FC<ServiceOrderFastModalProps> = ({
       setSelectedEquipmentId(res.equipment.id);
       setIsWithoutEquipment(false);
       setShowInlineNewEquipment(false);
+      setFormError(null);
       // Auto advance to step 4
       setCurrentStep(4);
     } else {
-      alert(res.error || 'Erro ao cadastrar equipamento');
+      setFormError(res.error || 'Erro ao cadastrar equipamento');
     }
   };
 
@@ -200,9 +202,10 @@ export const ServiceOrderFastModal: React.FC<ServiceOrderFastModalProps> = ({
   const handleFinalSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!defeitoRelatado.trim()) {
-      alert('Por favor, informe a descrição do problema relatado.');
+      setFormError('Por favor, informe a descrição do problema relatado.');
       return;
     }
+    setFormError(null);
 
     const machineIdent = isWithoutEquipment
       ? `Infraestrutura / Rede — ${selectedStore?.nome || 'Loja'}`
@@ -360,6 +363,19 @@ export const ServiceOrderFastModal: React.FC<ServiceOrderFastModalProps> = ({
 
         {/* Modal Scrollable Body */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 text-xs space-y-4">
+          {formError && (
+            <div className="p-3 bg-red-50 border border-red-300 text-red-800 rounded-xl text-xs font-semibold flex items-center justify-between">
+              <span>{formError}</span>
+              <button
+                type="button"
+                onClick={() => setFormError(null)}
+                className="text-red-500 hover:text-red-800 font-bold ml-2"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
           {/* =============================================================== */}
           {/* ETAPA 1 — Selecionar o Cliente (Matriz) */}
           {/* =============================================================== */}

@@ -414,8 +414,8 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setStepNotes((prev) => ({ ...prev, [stepId]: note }));
   }, []);
 
-  const resetChecklist = useCallback(() => {
-    if (window.confirm('Deseja iniciar um novo checklist em branco?')) {
+  const resetChecklist = useCallback((skipConfirm: boolean = false) => {
+    const doReset = () => {
       setMachine({
         ...INITIAL_MACHINE_IDENTIFICATION,
         data: new Date().toISOString().split('T')[0],
@@ -426,7 +426,9 @@ export const ChecklistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setCurrentStepIndex(0);
       setViewMode('step');
       showToast('Checklist reiniciado para novo atendimento.');
-    }
+    };
+
+    doReset();
   }, [showToast]);
 
   const saveCurrentChecklist = useCallback((): SavedChecklistRecord => {

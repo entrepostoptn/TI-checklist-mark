@@ -19,7 +19,8 @@ interface ClientContextType {
     data: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>
   ) => { success: boolean; error?: string; client?: Client };
   updateClient: (id: string, patch: Partial<Client>) => { success: boolean; error?: string };
-  deleteClient: (id: string) => { success: boolean; error?: string };
+  deleteClient: (id: string, cascadeStores?: boolean) => { success: boolean; error?: string };
+  inactivateClient: (id: string) => { success: boolean; error?: string };
 
   // CRUD Lojas / Filiais
   addStore: (
@@ -27,6 +28,13 @@ interface ClientContextType {
   ) => { success: boolean; error?: string; store?: Store };
   updateStore: (id: string, patch: Partial<Store>) => { success: boolean; error?: string };
   deleteStore: (id: string) => { success: boolean; error?: string };
+  toggleStoreStatus: (id: string) => { success: boolean; store?: Store; error?: string };
+  batchUpsertStores: (
+    storesList: Array<Omit<Store, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }>
+  ) => { success: boolean; created: number; updated: number };
+
+  // Helper Pata Negra Seeder
+  seedPataNegraData: () => { success: boolean; message: string };
 
   // Consultas e Filtros
   getClientById: (id: string) => Client | undefined;
@@ -47,7 +55,140 @@ interface ClientContextType {
 const STORAGE_KEY_CLIENTS = 'it_clients_v2';
 const STORAGE_KEY_STORES = 'it_stores_v2';
 
+export const PATA_NEGRA_CLIENT: Client = {
+  id: 'cli_pata_negra',
+  codigo: 'PTN-01',
+  razaoSocial: 'Entreposto Pata Negra Comércio de Alimentos Ltda',
+  nomeFantasia: 'Pata Negra',
+  cnpj: '45.123.890/0001-44',
+  telefone: '(11) 4198-8800',
+  email: 'entrepostoptn@gmail.com',
+  responsavel: 'Gestão de Operações TI & Loja',
+  observacoes: 'Rede de empórios e restaurantes gastronômicos de carnes nobres e charcutaria. Operações com frentes de caixa PDV, balanças e retaguarda.',
+  status: 'ativo',
+  createdAt: '2024-01-10T08:00:00Z',
+  updatedAt: '2026-10-14T10:00:00Z',
+};
+
+export const PATA_NEGRA_STORES: Store[] = [
+  {
+    id: 'store_ptn_matriz',
+    clienteId: 'cli_pata_negra',
+    clienteNome: 'Pata Negra',
+    nome: 'Matriz / Loja 01 — Alphaville Barueri',
+    codigoLoja: '01',
+    cnpj: '45.123.890/0001-44',
+    endereco: 'Alameda Araguaia, 1200 - Alphaville Industrial',
+    cidade: 'Barueri',
+    estado: 'SP',
+    cep: '06455-000',
+    telefone: '(11) 4198-8801',
+    responsavelLocal: 'Gerência de Loja / Carlos Silva (TI)',
+    horarioFuncionamento: 'Seg a Sáb: 08:00 às 22:00 | Dom: 09:00 às 18:00',
+    observacoes: 'Frente de caixa com 4 PDVs Dell, balanças Toledo Prix 5 e impressoras fiscais Epson.',
+    status: 'ativo',
+    createdAt: '2024-01-10T08:00:00Z',
+    updatedAt: '2026-10-14T10:00:00Z',
+  },
+  {
+    id: 'store_ptn_02',
+    clienteId: 'cli_pata_negra',
+    clienteNome: 'Pata Negra',
+    nome: 'Loja 02 — Osasco (Vila Yara)',
+    codigoLoja: '02',
+    cnpj: '45.123.890/0002-25',
+    endereco: 'Av. Franz Voegeli, 550 - Vila Yara',
+    cidade: 'Osasco',
+    estado: 'SP',
+    cep: '06020-190',
+    telefone: '(11) 3682-1002',
+    responsavelLocal: 'Marcos Silva (Gerente)',
+    horarioFuncionamento: 'Seg a Sáb: 08:00 às 22:00 | Dom: 09:00 às 18:00',
+    observacoes: '3 PDVs de caixa, balança Toledo na ilha de frios e link dedicado com switch de rede.',
+    status: 'ativo',
+    createdAt: '2024-02-01T08:00:00Z',
+    updatedAt: '2026-10-14T10:00:00Z',
+  },
+  {
+    id: 'store_ptn_03',
+    clienteId: 'cli_pata_negra',
+    clienteNome: 'Pata Negra',
+    nome: 'Loja 03 — Carapicuíba',
+    codigoLoja: '03',
+    cnpj: '45.123.890/0003-06',
+    endereco: 'Av. Inocêncio Seráfico, 1850 - Centro',
+    cidade: 'Carapicuíba',
+    estado: 'SP',
+    cep: '06320-000',
+    telefone: '(11) 4185-3003',
+    responsavelLocal: 'Renata Oliveira (Subgerente)',
+    horarioFuncionamento: 'Seg a Sáb: 08:00 às 21:00',
+    observacoes: '2 PDVs no empório de carnes nobres e balança Toledo Prix.',
+    status: 'ativo',
+    createdAt: '2024-03-01T08:00:00Z',
+    updatedAt: '2026-10-14T10:00:00Z',
+  },
+  {
+    id: 'store_ptn_04',
+    clienteId: 'cli_pata_negra',
+    clienteNome: 'Pata Negra',
+    nome: 'Loja 04 — Itapevi',
+    codigoLoja: '04',
+    cnpj: '45.123.890/0004-97',
+    endereco: 'Av. Presidente Vargas, 420 - Centro',
+    cidade: 'Itapevi',
+    estado: 'SP',
+    cep: '06653-010',
+    telefone: '(11) 4142-4004',
+    responsavelLocal: 'Thiago Mendes (Supervisor)',
+    horarioFuncionamento: 'Seg a Sáb: 08:00 às 20:00',
+    observacoes: 'Frente de caixa informatizada e computador da administração na retaguarda.',
+    status: 'ativo',
+    createdAt: '2024-04-01T08:00:00Z',
+    updatedAt: '2026-10-14T10:00:00Z',
+  },
+  {
+    id: 'store_ptn_05',
+    clienteId: 'cli_pata_negra',
+    clienteNome: 'Pata Negra',
+    nome: 'Loja 05 — Santana de Parnaíba / Residencial',
+    codigoLoja: '05',
+    cnpj: '45.123.890/0005-78',
+    endereco: 'Estrada dos Romeiros, 2800 - Suru',
+    cidade: 'Santana de Parnaíba',
+    estado: 'SP',
+    cep: '06500-000',
+    telefone: '(11) 4154-5005',
+    responsavelLocal: 'Juliana Souza (Gerente Bistrô)',
+    horarioFuncionamento: 'Ter a Dom: 09:00 às 22:00',
+    observacoes: 'Bistrô & Empório gastronômico com comanda eletrônica e PDVs integrados.',
+    status: 'ativo',
+    createdAt: '2024-05-01T08:00:00Z',
+    updatedAt: '2026-10-14T10:00:00Z',
+  },
+  {
+    id: 'store_ptn_cd',
+    clienteId: 'cli_pata_negra',
+    clienteNome: 'Pata Negra',
+    nome: 'Centro de Distribuição & Entreposto Central',
+    codigoLoja: 'CD',
+    cnpj: '45.123.890/0006-59',
+    endereco: 'Rodovia Castello Branco, KM 26 - Galpão 04',
+    cidade: 'Barueri',
+    estado: 'SP',
+    cep: '06460-040',
+    telefone: '(11) 4198-8899',
+    responsavelLocal: 'Roberto Neves (Logística & TI)',
+    horarioFuncionamento: 'Seg a Sex: 06:00 às 18:00',
+    observacoes: 'Servidor central de retaguarda, balança de plataforma de expedição e rack de rede Mikrotik.',
+    status: 'ativo',
+    createdAt: '2024-01-01T08:00:00Z',
+    updatedAt: '2026-10-14T10:00:00Z',
+  },
+];
+
 export const INITIAL_DEMO_CLIENTS: Client[] = [
+  PATA_NEGRA_CLIENT,
   {
     id: 'cli_mark',
     codigo: 'MARK-01',
@@ -79,6 +220,7 @@ export const INITIAL_DEMO_CLIENTS: Client[] = [
 ];
 
 export const INITIAL_DEMO_STORES: Store[] = [
+  ...PATA_NEGRA_STORES,
   {
     id: 'store_mark_matriz',
     clienteId: 'cli_mark',
@@ -383,24 +525,77 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   );
 
   const deleteClient = useCallback(
-    (id: string) => {
-      // Check if client has stores
-      const attachedStores = stores.filter((s) => s.clienteId === id);
-      if (attachedStores.length > 0) {
-        return {
-          success: false,
-          error: `Não é possível excluir o cliente pois ele possui ${attachedStores.length} loja(s)/filiais vinculadas. Remova ou transfira as lojas primeiro.`,
-        };
+    (id: string, cascadeStores: boolean = true) => {
+      if (cascadeStores) {
+        // Cascade delete attached stores from Firestore and state
+        const attachedStores = stores.filter((s) => s.clienteId === id);
+        attachedStores.forEach((st) => {
+          syncDeleteStore(st.id);
+        });
+        setStores((prev) => prev.filter((s) => s.clienteId !== id));
+      } else {
+        const attachedStores = stores.filter((s) => s.clienteId === id);
+        if (attachedStores.length > 0) {
+          return {
+            success: false,
+            error: `Não é possível excluir o cliente pois ele possui ${attachedStores.length} loja(s)/filiais vinculadas. Remova as lojas antes ou confirme a exclusão em cascata.`,
+          };
+        }
       }
 
-      setClients((prev) => prev.map((c) => (c.id === id ? { ...c, status: 'inativo' } : c)));
-      // Also delete or mark inactive in firestore
+      // Remove from state immediately
+      setClients((prev) => prev.filter((c) => c.id !== id));
+      // Delete in Firestore
       syncDeleteClient(id);
 
       return { success: true };
     },
     [stores]
   );
+
+  const inactivateClient = useCallback(
+    (id: string) => {
+      return updateClient(id, { status: 'inativo' });
+    },
+    [updateClient]
+  );
+
+  // Helper to ensure Pata Negra client and its branches are guaranteed in DB and local state
+  const seedPataNegraData = useCallback(() => {
+    let clientAdded = false;
+    let storesAddedCount = 0;
+
+    setClients((prevClients) => {
+      const exists = prevClients.some(
+        (c) =>
+          c.id === PATA_NEGRA_CLIENT.id ||
+          (c.nomeFantasia && c.nomeFantasia.toLowerCase().includes('pata negra')) ||
+          c.razaoSocial.toLowerCase().includes('pata negra')
+      );
+      if (!exists) {
+        clientAdded = true;
+        syncSaveClient(PATA_NEGRA_CLIENT);
+        return [PATA_NEGRA_CLIENT, ...prevClients];
+      }
+      return prevClients;
+    });
+
+    setStores((prevStores) => {
+      const existingIds = new Set(prevStores.map((s) => s.id));
+      const toAdd = PATA_NEGRA_STORES.filter((st) => !existingIds.has(st.id));
+      if (toAdd.length > 0) {
+        storesAddedCount = toAdd.length;
+        toAdd.forEach((st) => syncSaveStore(st));
+        return [...toAdd, ...prevStores];
+      }
+      return prevStores;
+    });
+
+    return {
+      success: true,
+      message: `Cliente Pata Negra e suas ${PATA_NEGRA_STORES.length} filiais sincronizadas e ativas!`,
+    };
+  }, []);
 
   // 4. Store CRUD with Contextual Duplicate Validation
   const addStore = useCallback(
@@ -509,6 +704,76 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return { success: true };
   }, []);
 
+  const toggleStoreStatus = useCallback(
+    (id: string) => {
+      const existing = stores.find((s) => s.id === id);
+      if (!existing) return { success: false, error: 'Loja não encontrada' };
+      const nextStatus: 'ativo' | 'inativo' = existing.status === 'ativo' ? 'inativo' : 'ativo';
+      const updated: Store = {
+        ...existing,
+        status: nextStatus,
+        updatedAt: new Date().toISOString(),
+      };
+      setStores((prev) => prev.map((s) => (s.id === id ? updated : s)));
+      syncSaveStore(updated);
+      return { success: true, store: updated };
+    },
+    [stores]
+  );
+
+  const batchUpsertStores = useCallback(
+    (
+      storesList: Array<Omit<Store, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }>
+    ) => {
+      let created = 0;
+      let updated = 0;
+
+      setStores((prev) => {
+        const next = [...prev];
+        for (const item of storesList) {
+          // Find existing by ID or (clienteId and codigoLoja)
+          const existingIdx = next.findIndex(
+            (s) =>
+              (item.id && s.id === item.id) ||
+              (s.clienteId === item.clienteId &&
+                s.codigoLoja.trim().toLowerCase() === item.codigoLoja.trim().toLowerCase())
+          );
+
+          if (existingIdx >= 0) {
+            // Update existing without duplicating
+            const existing = next[existingIdx];
+            const updatedStore: Store = {
+              ...existing,
+              ...item,
+              id: existing.id,
+              createdAt: existing.createdAt,
+              updatedAt: new Date().toISOString(),
+            };
+            next[existingIdx] = updatedStore;
+            syncSaveStore(updatedStore);
+            updated++;
+          } else {
+            // Create new
+            const newStore: Store = {
+              ...item,
+              id: item.id || `store_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+              status: item.status || 'ativo',
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            };
+            next.push(newStore);
+            syncSaveStore(newStore);
+            created++;
+          }
+        }
+        return next;
+      });
+
+      return { success: true, created, updated };
+    },
+    []
+  );
+
   // 5. Query helpers
   const getClientById = useCallback(
     (id: string) => clients.find((c) => c.id === id),
@@ -576,6 +841,11 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
   }, [clients, stores]);
 
+  useEffect(() => {
+    // Automatically guarantee Pata Negra client and its branches are seeded
+    seedPataNegraData();
+  }, [seedPataNegraData]);
+
   return (
     <ClientContext.Provider
       value={{
@@ -584,9 +854,13 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         addClient,
         updateClient,
         deleteClient,
+        inactivateClient,
         addStore,
         updateStore,
         deleteStore,
+        toggleStoreStatus,
+        batchUpsertStores,
+        seedPataNegraData,
         getClientById,
         getStoreById,
         getStoresByClientId,

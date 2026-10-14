@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useChecklist } from '../context/ChecklistContext';
 import { isStepApplicable, isItemApplicable } from '../utils/checklistGenerator';
 import { ChecklistItem } from './ChecklistItem';
@@ -31,6 +31,8 @@ export const StepContent: React.FC = () => {
     syncFinalTestFromSteps,
     setViewMode,
   } = useChecklist();
+
+  const [copiedUtil, setCopiedUtil] = useState(false);
 
   const currentStep = steps[currentStepIndex];
   if (!currentStep) return null;
@@ -143,12 +145,15 @@ export const StepContent: React.FC = () => {
                   type="button"
                   onClick={() => {
                     navigator.clipboard.writeText(`cmd.exe /c mkdir "${config.pastaUtilMs}"`);
-                    alert(`Comando copiado: cmd.exe /c mkdir "${config.pastaUtilMs}"`);
+                    setCopiedUtil(true);
+                    setTimeout(() => setCopiedUtil(false), 2000);
                   }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-medium rounded-lg bg-blue-600 hover:bg-blue-500 text-white shadow-xs"
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-medium rounded-lg shadow-xs transition-colors ${
+                    copiedUtil ? 'bg-emerald-600 text-white' : 'bg-blue-600 hover:bg-blue-500 text-white'
+                  }`}
                 >
                   <Terminal className="w-3.5 h-3.5" />
-                  Copiar mkdir
+                  {copiedUtil ? 'Copiado!' : 'Copiar mkdir'}
                 </button>
               </div>
 

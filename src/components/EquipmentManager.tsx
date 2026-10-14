@@ -10,6 +10,7 @@ import {
 import { MachineType } from '../types/checklist';
 import { EquipmentModal } from './EquipmentModal';
 import { EquipmentDetailModal } from './EquipmentDetailModal';
+import { ConfirmModal } from './ConfirmModal';
 import { formatDateBR, formatDateTimeBR, formatShortDateTimeBR, calculateDaysBetween } from '../utils/dateFormatter';
 import {
   Laptop,
@@ -62,6 +63,7 @@ export const EquipmentManager: React.FC<EquipmentManagerProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [equipmentToEdit, setEquipmentToEdit] = useState<Equipment | null>(null);
   const [selectedEquipmentForDetail, setSelectedEquipmentForDetail] = useState<Equipment | null>(null);
+  const [equipmentToDelete, setEquipmentToDelete] = useState<Equipment | null>(null);
 
   // Unique list of stores for filter
   const storesList = Array.from(new Set(equipments.map((e) => e.lojaOrigem).filter(Boolean)));
@@ -113,12 +115,16 @@ export const EquipmentManager: React.FC<EquipmentManagerProps> = ({
 
   const handleDelete = (eq: Equipment, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm(`Tem certeza que deseja excluir o cadastro da máquina "${eq.nome}" (${eq.patrimonio})?`)) {
-      deleteEquipment(eq.id);
-      if (selectedEquipmentForDetail?.id === eq.id) {
-        setSelectedEquipmentForDetail(null);
-      }
+    setEquipmentToDelete(eq);
+  };
+
+  const handleConfirmDeleteEquipment = () => {
+    if (!equipmentToDelete) return;
+    deleteEquipment(equipmentToDelete.id);
+    if (selectedEquipmentForDetail?.id === equipmentToDelete.id) {
+      setSelectedEquipmentForDetail(null);
     }
+    setEquipmentToDelete(null);
   };
 
   return (
@@ -442,6 +448,17 @@ export const EquipmentManager: React.FC<EquipmentManagerProps> = ({
         }}
         onStartChecklist={onStartChecklistForMachine}
         onNewServiceOrder={onOpenServiceOrderForMachine}
+      />
+
+      {/* Confirmação de Exclusão de Equipamento (In-App) */}
+      <ConfirmModal
+        isOpen={Boolean(equipmentToDelete)}
+        title={`Excluir Máquina "${equipmentToDelete?.nome}"?`}
+        message={`Tem certeza que deseja excluir o cadastro da máquina "${equipmentToDelete?.nome}" (${equipmentToDelete?.patrimonio})?`}
+        confirmText="Excluir Máquina"
+        onConfirm={handleConfirmDeleteEquipment}
+        onCancel={() => setEquipmentToDelete(null)}
+        variant="danger"
       />
     </div>
   );

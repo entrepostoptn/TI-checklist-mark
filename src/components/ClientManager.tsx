@@ -5,6 +5,8 @@ import { useServiceOrders } from '../context/ServiceOrderContext';
 import { Client, Store } from '../types/client';
 import { Equipment, EquipmentType } from '../types/equipment';
 import { MachineType } from '../types/checklist';
+import { ConfirmModal } from './ConfirmModal';
+import { PataNegraMatrixModal } from './PataNegraMatrixModal';
 import {
   Building2,
   Store as StoreIcon,
@@ -56,13 +58,17 @@ export const ClientManager: React.FC<ClientManagerProps> = ({
     addClient,
     updateClient,
     deleteClient,
+    inactivateClient,
     addStore,
     updateStore,
     deleteStore,
+    toggleStoreStatus,
+    batchUpsertStores,
+    seedPataNegraData,
     stats,
   } = useClients();
 
-  const { equipments, addEquipment } = useEquipment();
+  const { equipments, addEquipment, updateEquipment, deleteEquipment } = useEquipment();
   const { orders } = useServiceOrders();
 
   // Search & Filter state
@@ -82,8 +88,22 @@ export const ClientManager: React.FC<ClientManagerProps> = ({
   const [editingStore, setEditingStore] = useState<Store | null>(null);
   const [preselectedClientIdForStore, setPreselectedClientIdForStore] = useState<string | undefined>(undefined);
 
+  const [isPataNegraMatrixOpen, setIsPataNegraMatrixOpen] = useState(false);
+
   const [isNewEquipmentModalOpen, setIsNewEquipmentModalOpen] = useState(false);
+  const [editingEquipmentForStore, setEditingEquipmentForStore] = useState<Equipment | null>(null);
   const [targetStoreForEquipment, setTargetStoreForEquipment] = useState<Store | null>(null);
+
+  // In-app Confirm Modal State (replaces window.confirm)
+  const [confirmDeleteState, setConfirmDeleteState] = useState<{
+    isOpen: boolean;
+    type: 'client' | 'store' | 'equipment';
+    id: string;
+    title: string;
+    message: string;
+    confirmText?: string;
+    extraCount?: number;
+  } | null>(null);
 
   // Feedback Toast / Alert
   const [feedbackMessage, setFeedbackMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
@@ -128,6 +148,16 @@ export const ClientManager: React.FC<ClientManagerProps> = ({
     if (!selectedStoreId) return null;
     return stores.find((s) => s.id === selectedStoreId) || null;
   }, [stores, selectedStoreId]);
+
+  // Pata Negra Client Memo
+  const pataNegraClient = useMemo(() => {
+    return clients.find(
+      (c) =>
+        c.id === 'cli_pata_negra' ||
+        (c.nomeFantasia && c.nomeFantasia.toLowerCase().includes('pata')) ||
+        c.razaoSocial.toLowerCase().includes('pata')
+    );
+  }, [clients]);
 
   // Equipments for selected store
   const storeEquipments = useMemo(() => {
@@ -179,31 +209,104 @@ export const ClientManager: React.FC<ClientManagerProps> = ({
 
   const handleOpenAddEquipmentToStore = (store: Store) => {
     setTargetStoreForEquipment(store);
+    setEditingEquipmentForStore(null);
     setIsNewEquipmentModalOpen(true);
   };
 
-  const handleDeleteClient = (clientId: string, e: React.MouseEvent) => {
+  const handleOpenEditEquipmentInStore = (eq: Equipment, store: Store, e: React.MouseEvent) => {
     e.stopPropagation();
-    const client = clients.find((c) => c.id === clientId);
-    if (!client) return;
-
-    const res = deleteClient(clientId);
-    if (!res.success) {
-      showFeedback(res.error || 'Erro ao desativar cliente', 'error');
-    } else {
-      showFeedback(`Cliente ${client.nomeFantasia || client.razaoSocial} desativado com sucesso.`);
-    }
+    setTargetStoreForEquipment(store);
+    setEditingEquipmentForStore(eq);
+    setIsNewEquipmentModalOpen(true);
   };
 
-  const handleDeleteStore = (storeId: string, e: React.MouseEvent) => {
+  const handleRequestDeleteClient = (client: Client, e: React.MouseEvent) => {
     e.stopPropagation();
-    const store = stores.find((s) => s.id === storeId);
-    if (!store) return;
+    const clientStores = stores.filter((s) => s.clienteId === client.id);
+    setConfirmDeleteState({
+      isOpen: true,
+      type: 'client',
+      id: client.id,
+      title: `Excluir Cliente "${client.nomeFantasia || client.razaoSocial}"?`,
+      message:
+        clientStores.length > 0
+          ? `Este cliente possui ${clientStores.length} filial(is) vinculada(s). Ao confirmar, o cliente e todas as suas lojas vinculadas serão excluídos do sistema.`
+          : 'Tem certeza que deseja excluir permanentemente o cadastro deste cliente matriz?',
+      confirmText: clientStores.length > 0 ? 'Excluir Cliente e Filiais' : 'Confirmar Exclusão',
+      extraCount: clientStores.length,
+    });
+  };
 
-    if (window.confirm(`Tem certeza que deseja remover a loja "${store.nome}"?`)) {
-      deleteStore(storeId);
-      if (selectedStoreId === storeId) setSelectedStoreId(null);
-      showFeedback(`Loja "${store.nome}" excluída.`);
+  const handleRequestDeleteStore = (store: Store, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setConfirmDeleteState({
+      isOpen: true,
+      type: 'store',
+      id: store.id,
+      title: `Excluir Filial "${store.nome}"?`,
+      message: `Tem certeza que deseja remover esta loja (Código: ${store.codigoLoja}, ${store.cidade} - ${store.estado})?`,
+      confirmText: 'Excluir Loja',
+    });
+  };
+
+  const handleRequestDeleteEquipment = (eq: Equipment, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setConfirmDeleteState({
+      isOpen: true,
+      type: 'equipment',
+      id: eq.id,
+      title: `Excluir Equipamento "${eq.nome}"?`,
+      message: `Tem certeza que deseja excluir o cadastro de "${eq.nome}" (Patrimônio: ${eq.patrimonio})?`,
+      confirmText: 'Excluir Equipamento',
+    });
+  };
+
+  const handleConfirmDelete = () => {
+    if (!confirmDeleteState) return;
+    const { type, id } = confirmDeleteState;
+
+    if (type === 'client') {
+      const res = deleteClient(id, true);
+      if (!res.success) {
+        showFeedback(res.error || 'Erro ao excluir cliente', 'error');
+      } else {
+        showFeedback('Cliente e filiais vinculadas excluídos com sucesso.');
+        if (expandedClientId === id) setExpandedClientId(null);
+      }
+    } else if (type === 'store') {
+      deleteStore(id);
+      if (selectedStoreId === id) setSelectedStoreId(null);
+      showFeedback('Filial excluída com sucesso.');
+    } else if (type === 'equipment') {
+      deleteEquipment(id);
+      showFeedback('Equipamento excluído com sucesso.');
+    }
+
+    setConfirmDeleteState(null);
+  };
+
+  const handleSaveEquipment = (
+    data: Omit<Equipment, 'id' | 'createdAt' | 'updatedAt'>,
+    editId?: string
+  ) => {
+    if (editId) {
+      const res = updateEquipment(editId, data);
+      if (!res.success) {
+        showFeedback(res.error || 'Erro ao atualizar equipamento', 'error');
+      } else {
+        showFeedback('Equipamento atualizado com sucesso!');
+        setIsNewEquipmentModalOpen(false);
+        setEditingEquipmentForStore(null);
+      }
+    } else {
+      const res = addEquipment(data);
+      if (!res.success) {
+        showFeedback(res.error || 'Erro ao cadastrar equipamento', 'error');
+      } else {
+        showFeedback(`Equipamento "${res.equipment?.nome}" cadastrado com sucesso!`);
+        setIsNewEquipmentModalOpen(false);
+        setEditingEquipmentForStore(null);
+      }
     }
   };
 
@@ -258,6 +361,25 @@ export const ClientManager: React.FC<ClientManagerProps> = ({
           </div>
 
           <div className="flex items-center gap-2 flex-wrap shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                const res = seedPataNegraData();
+                showFeedback(res.message);
+                const ptn = clients.find(
+                  (c) =>
+                    c.id === 'cli_pata_negra' ||
+                    (c.nomeFantasia && c.nomeFantasia.toLowerCase().includes('pata negra')) ||
+                    c.razaoSocial.toLowerCase().includes('pata negra')
+                );
+                if (ptn) setExpandedClientId(ptn.id);
+              }}
+              className="flex items-center gap-2 px-3.5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs sm:text-sm rounded-xl shadow-md transition-all cursor-pointer"
+              title="Garantir e abrir cadastro do Cliente Pata Negra e suas 6 filiais"
+            >
+              <Sparkles className="w-4 h-4 text-amber-200" />
+              <span>Cliente Pata Negra</span>
+            </button>
             <button
               type="button"
               onClick={handleOpenAddClient}
@@ -463,9 +585,9 @@ export const ClientManager: React.FC<ClientManagerProps> = ({
                       </button>
                       <button
                         type="button"
-                        onClick={(e) => handleDeleteClient(client.id, e)}
+                        onClick={(e) => handleRequestDeleteClient(client, e)}
                         className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                        title="Desativar cliente"
+                        title="Excluir cliente"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -488,16 +610,34 @@ export const ClientManager: React.FC<ClientManagerProps> = ({
                   {/* Expanded Stores List (Filiais da Matriz) */}
                   {isExpanded && (
                     <div className="p-3 bg-slate-100/70 border-t border-slate-200/80 space-y-2 animate-in fade-in duration-150">
-                      <div className="flex items-center justify-between px-1 text-[11px] font-bold text-slate-600">
+                      {/* Header da lista de filiais */}
+                      <div className="flex items-center justify-between px-1 text-[11px] font-bold text-slate-600 flex-wrap gap-2">
                         <span>Lojas e Filiais vinculadas</span>
-                        <button
-                          type="button"
-                          onClick={(e) => handleOpenAddStore(client.id, e)}
-                          className="inline-flex items-center gap-1 text-blue-700 hover:text-blue-900 font-bold text-xs cursor-pointer"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                          <span>Adicionar Loja</span>
-                        </button>
+                        <div className="flex items-center gap-2">
+                          {(client.id === 'cli_pata_negra' ||
+                            client.nomeFantasia?.toLowerCase().includes('pata') ||
+                            client.razaoSocial.toLowerCase().includes('pata')) && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setIsPataNegraMatrixOpen(true);
+                              }}
+                              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs cursor-pointer transition-all"
+                            >
+                              <StoreIcon className="w-3.5 h-3.5 text-emerald-200" />
+                              <span>Matriz Lojas 1 a 43</span>
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={(e) => handleOpenAddStore(client.id, e)}
+                            className="inline-flex items-center gap-1 text-blue-700 hover:text-blue-900 font-bold text-xs cursor-pointer bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Adicionar Loja</span>
+                          </button>
+                        </div>
                       </div>
 
                       {clientStores.length === 0 ? (
@@ -516,6 +656,7 @@ export const ClientManager: React.FC<ClientManagerProps> = ({
                       ) : (
                         clientStores.map((store) => {
                           const isStoreSelected = selectedStoreId === store.id;
+                          const isAtiva = store.status === 'ativo';
                           const storeEqCount = equipments.filter(
                             (e) => e.lojaId === store.id || (e.lojaNome && e.lojaNome.toLowerCase() === store.nome.toLowerCase())
                           ).length;
@@ -535,28 +676,59 @@ export const ClientManager: React.FC<ClientManagerProps> = ({
                                 isStoreSelected
                                   ? 'bg-blue-50/90 border-blue-400 shadow-sm ring-1 ring-blue-300'
                                   : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/80'
-                              }`}
+                              } ${!isAtiva ? 'opacity-90 bg-slate-50/60' : ''}`}
                             >
                               <div className="flex items-start justify-between gap-2">
-                                <div className="min-w-0">
+                                <div className="min-w-0 flex-1">
                                   <div className="flex items-center gap-2 flex-wrap">
                                     <StoreIcon className={`w-4 h-4 shrink-0 ${isStoreSelected ? 'text-blue-600' : 'text-slate-500'}`} />
-                                    <span className="font-bold text-slate-900 text-xs sm:text-sm">{store.nome}</span>
-                                    <span className="font-mono text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-700">
-                                      Cód: {store.codigoLoja}
+                                    {/* Nome Fantasia da Filial */}
+                                    <span className="font-extrabold text-slate-900 text-xs sm:text-sm">{store.nome}</span>
+                                    {/* ID da Empresa (Código da Loja) */}
+                                    <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200">
+                                      ID: {store.codigoLoja}
                                     </span>
-                                    <span
-                                      className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full ${
-                                        store.status === 'ativo' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'
+                                    {/* Indicador Visual Circular: Bolinha Verde / Bolinha Vermelha com Toggle rápido */}
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleStoreStatus(store.id);
+                                        showFeedback(
+                                          `Loja ${store.codigoLoja} alterada para: ${
+                                            isAtiva ? 'Inativa (🔴 Bolinha Vermelha)' : 'Ativa (🟢 Bolinha Verde)'
+                                          }`
+                                        );
+                                      }}
+                                      title="Clique para alternar o status: Ativa (Bolinha Verde) / Inativa (Bolinha Vermelha)"
+                                      className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full border shadow-xs transition-all cursor-pointer ${
+                                        isAtiva
+                                          ? 'bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200'
+                                          : 'bg-rose-100 text-rose-800 border-rose-300 hover:bg-rose-200'
                                       }`}
                                     >
-                                      {store.status === 'ativo' ? 'Ativa' : 'Inativa'}
-                                    </span>
+                                      <span
+                                        className={`w-2 h-2 rounded-full ring-2 shadow-xs ${
+                                          isAtiva ? 'bg-emerald-500 ring-emerald-200' : 'bg-rose-500 ring-rose-200'
+                                        }`}
+                                      />
+                                      <span>{isAtiva ? 'Ativa' : 'Inativa'}</span>
+                                    </button>
                                   </div>
 
-                                  <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mt-1">
-                                    <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-                                    <span className="truncate">{store.endereco}, {store.cidade} - {store.estado}</span>
+                                  {/* Endereço, Município, CEP e Telefone */}
+                                  <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-1 flex-wrap">
+                                    <div className="flex items-center gap-1 truncate max-w-md">
+                                      <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                                      <span className="truncate">{store.endereco}, {store.cidade} - {store.estado}</span>
+                                    </div>
+                                    {store.cep && <span className="font-mono text-slate-400 text-[10px]">(CEP: {store.cep})</span>}
+                                    {store.telefone && (
+                                      <span className="inline-flex items-center gap-1 font-mono text-[10px] text-slate-700 bg-slate-100 px-1.5 py-0.2 rounded">
+                                        <Phone className="w-2.5 h-2.5 text-slate-400" />
+                                        {store.telefone}
+                                      </span>
+                                    )}
                                   </div>
 
                                   <div className="flex items-center gap-3 text-[11px] text-slate-600 mt-2">
@@ -579,15 +751,15 @@ export const ClientManager: React.FC<ClientManagerProps> = ({
                                   <button
                                     type="button"
                                     onClick={(e) => handleOpenEditStore(store, e)}
-                                    className="p-1.5 text-slate-400 hover:text-blue-600 rounded-lg transition-colors cursor-pointer"
+                                    className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
                                     title="Editar loja"
                                   >
                                     <Edit2 className="w-3.5 h-3.5" />
                                   </button>
                                   <button
                                     type="button"
-                                    onClick={(e) => handleDeleteStore(store.id, e)}
-                                    className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg transition-colors cursor-pointer"
+                                    onClick={(e) => handleRequestDeleteStore(store, e)}
+                                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                                     title="Excluir loja"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
@@ -813,22 +985,40 @@ export const ClientManager: React.FC<ClientManagerProps> = ({
                           </div>
 
                           {/* Action buttons */}
-                          <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2 text-xs">
-                            {onOpenEquipmentDetail && (
+                          <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-1 text-xs">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {onOpenEquipmentDetail && (
+                                <button
+                                  type="button"
+                                  onClick={() => onOpenEquipmentDetail(eq)}
+                                  className="text-blue-600 hover:text-blue-800 font-bold text-[11px] cursor-pointer"
+                                >
+                                  Detalhes
+                                </button>
+                              )}
                               <button
                                 type="button"
-                                onClick={() => onOpenEquipmentDetail(eq)}
-                                className="text-blue-600 hover:text-blue-800 font-bold text-[11px] cursor-pointer"
+                                onClick={(e) => handleOpenEditEquipmentInStore(eq, activeSelectedStore, e)}
+                                className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors cursor-pointer"
+                                title="Editar dados deste equipamento"
                               >
-                                Detalhes / Histórico
+                                <Edit2 className="w-3.5 h-3.5" />
                               </button>
-                            )}
+                              <button
+                                type="button"
+                                onClick={(e) => handleRequestDeleteEquipment(eq, e)}
+                                className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer"
+                                title="Excluir este equipamento da loja"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
 
                             {onOpenNewServiceOrderForStore && (
                               <button
                                 type="button"
                                 onClick={() => onOpenNewServiceOrderForStore(activeSelectedStore, eq)}
-                                className="px-2 py-1 bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 font-bold text-[11px] rounded-md transition-colors cursor-pointer"
+                                className="px-2 py-1 bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 font-bold text-[11px] rounded-md transition-colors cursor-pointer shrink-0"
                               >
                                 + Abrir OS
                               </button>
@@ -967,21 +1157,45 @@ export const ClientManager: React.FC<ClientManagerProps> = ({
         />
       )}
 
-      {/* MODAL 3: Cadastrar Novo Equipamento na Loja (Compact & Adaptável ao Tipo) */}
+      {/* MODAL 3: Cadastrar / Editar Equipamento na Loja */}
       {isNewEquipmentModalOpen && targetStoreForEquipment && (
         <NewStoreEquipmentModal
           store={targetStoreForEquipment}
+          equipmentToEdit={editingEquipmentForStore}
           isOpen={isNewEquipmentModalOpen}
-          onClose={() => setIsNewEquipmentModalOpen(false)}
-          onSave={(eqData) => {
-            const res = addEquipment(eqData);
-            if (res.success && res.equipment) {
-              showFeedback(`Equipamento ${res.equipment.nome} cadastrado na loja ${targetStoreForEquipment.nome}!`);
-              setIsNewEquipmentModalOpen(false);
-            } else {
-              showFeedback(res.error || 'Erro ao cadastrar equipamento', 'error');
-            }
+          onClose={() => {
+            setIsNewEquipmentModalOpen(false);
+            setEditingEquipmentForStore(null);
           }}
+          onSave={handleSaveEquipment}
+        />
+      )}
+
+      {/* MODAL 4: Matriz Especial de Filiais Pata Negra (1 a 43) */}
+      {isPataNegraMatrixOpen && (
+        <PataNegraMatrixModal
+          isOpen={isPataNegraMatrixOpen}
+          onClose={() => setIsPataNegraMatrixOpen(false)}
+          pataNegraClient={pataNegraClient}
+          stores={stores}
+          onOpenAddStore={(clientId) => handleOpenAddStore(clientId || pataNegraClient?.id)}
+          onOpenEditStore={(st) => handleOpenEditStore(st, { stopPropagation: () => {} } as any)}
+          onRequestDeleteStore={(st) => handleRequestDeleteStore(st, { stopPropagation: () => {} } as any)}
+          onToggleStatus={(storeId) => toggleStoreStatus(storeId)}
+          onBatchUpsert={(list) => batchUpsertStores(list)}
+        />
+      )}
+
+      {/* MODAL 5: Confirmação de Exclusão In-App (Seguro para iframe) */}
+      {confirmDeleteState && (
+        <ConfirmModal
+          isOpen={confirmDeleteState.isOpen}
+          title={confirmDeleteState.title}
+          message={confirmDeleteState.message}
+          confirmText={confirmDeleteState.confirmText || 'Confirmar Exclusão'}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setConfirmDeleteState(null)}
+          variant="danger"
         />
       )}
     </div>
@@ -1008,15 +1222,17 @@ const ClientFormModal: React.FC<ClientFormModalProps> = ({ client, isOpen, onClo
   const [responsavel, setResponsavel] = useState(client?.responsavel || '');
   const [observacoes, setObservacoes] = useState(client?.observacoes || '');
   const [status, setStatus] = useState<'ativo' | 'inativo'>(client?.status || 'ativo');
+  const [formError, setFormError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!razaoSocial.trim() && !nomeFantasia.trim()) {
-      alert('Informe ao menos a Razão Social ou Nome Fantasia.');
+      setFormError('Informe ao menos a Razão Social ou Nome Fantasia.');
       return;
     }
+    setFormError(null);
 
     onSave({
       razaoSocial: razaoSocial.trim() || nomeFantasia.trim(),
@@ -1047,6 +1263,15 @@ const ClientFormModal: React.FC<ClientFormModalProps> = ({ client, isOpen, onClo
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4 max-h-[80vh] overflow-y-auto text-xs">
+          {formError && (
+            <div className="p-3 bg-red-50 border border-red-300 text-red-800 rounded-xl font-bold flex items-center justify-between">
+              <span>{formError}</span>
+              <button type="button" onClick={() => setFormError(null)} className="text-red-500 hover:text-red-800 ml-2">
+                ✕
+              </button>
+            </div>
+          )}
+
           <div>
             <label className="block font-bold text-slate-700 mb-1">
               Nome Fantasia <span className="text-red-500">*</span>
@@ -1211,19 +1436,21 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({
   const [horarioFuncionamento, setHorarioFuncionamento] = useState(store?.horarioFuncionamento || '08:00 às 20:00');
   const [observacoes, setObservacoes] = useState(store?.observacoes || '');
   const [status, setStatus] = useState<'ativo' | 'inativo'>(store?.status || 'ativo');
+  const [formError, setFormError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!clienteId) {
-      alert('Selecione o cliente matriz.');
+      setFormError('Selecione o cliente matriz.');
       return;
     }
     if (!nome.trim()) {
-      alert('Informe o nome ou identificação da loja.');
+      setFormError('Informe o Nome Fantasia / Identificação da filial.');
       return;
     }
+    setFormError(null);
 
     const client = clients.find((c) => c.id === clienteId);
 
@@ -1261,6 +1488,15 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4 max-h-[82vh] overflow-y-auto text-xs">
+          {formError && (
+            <div className="p-3 bg-red-50 border border-red-300 text-red-800 rounded-xl font-bold flex items-center justify-between">
+              <span>{formError}</span>
+              <button type="button" onClick={() => setFormError(null)} className="text-red-500 hover:text-red-800 ml-2">
+                ✕
+              </button>
+            </div>
+          )}
+
           <div>
             <label className="block font-bold text-slate-700 mb-1">
               Cliente Matriz Responsável <span className="text-red-500">*</span>
@@ -1283,27 +1519,29 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="sm:col-span-2">
               <label className="block font-bold text-slate-700 mb-1">
-                Nome ou Identificação da Loja <span className="text-red-500">*</span>
+                Nome Fantasia (Exibição da Filial) <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 required
-                placeholder="Ex: Loja 01 — Barueri"
+                placeholder="Ex: Loja 01 — Alphaville Barueri"
                 value={nome}
                 onChange={(e) => setNome(e.target.value)}
-                className="w-full p-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full p-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none font-semibold"
               />
+              <span className="text-[10px] text-slate-400">Identificação exibida na interface.</span>
             </div>
 
             <div>
-              <label className="block font-bold text-slate-700 mb-1">Número / Código Loja</label>
+              <label className="block font-bold text-slate-700 mb-1">ID Empresa (Código 1 a 43)</label>
               <input
                 type="text"
                 placeholder="Ex: 01"
                 value={codigoLoja}
                 onChange={(e) => setCodigoLoja(e.target.value)}
-                className="w-full p-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none font-mono"
+                className="w-full p-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none font-mono font-bold"
               />
+              <span className="text-[10px] text-slate-400">Exato da loja.</span>
             </div>
           </div>
 
@@ -1393,14 +1631,14 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({
             </div>
 
             <div>
-              <label className="block font-bold text-slate-700 mb-1">Status da Loja</label>
+              <label className="block font-bold text-slate-700 mb-1">Status da Loja (Indicador)</label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as 'ativo' | 'inativo')}
                 className="w-full p-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none font-semibold bg-white"
               >
-                <option value="ativo">Ativa (Em Operação)</option>
-                <option value="inativo">Inativa</option>
+                <option value="ativo">🟢 Ativa (Bolinha Verde — Em Operação)</option>
+                <option value="inativo">🔴 Inativa (Bolinha Vermelha — Preservada)</option>
               </select>
             </div>
           </div>
@@ -1442,29 +1680,63 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({
 // ============================================================================
 interface NewStoreEquipmentModalProps {
   store: Store;
+  equipmentToEdit?: Equipment | null;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: Omit<Equipment, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  onSave: (data: Omit<Equipment, 'id' | 'createdAt' | 'updatedAt'>, editId?: string) => void;
 }
 
 export const NewStoreEquipmentModal: React.FC<NewStoreEquipmentModalProps> = ({
   store,
+  equipmentToEdit,
   isOpen,
   onClose,
   onSave,
 }) => {
-  const [tipo, setTipo] = useState<EquipmentType>('PDV');
-  const [nome, setNome] = useState('PDV 01');
-  const [patrimonio, setPatrimonio] = useState('');
-  const [posicaoCaixa, setPosicaoCaixa] = useState('Frente de Caixa 01');
-  const [marca, setMarca] = useState('Dell');
-  const [modelo, setModelo] = useState('OptiPlex 3050 Micro');
-  const [numeroSerie, setNumeroSerie] = useState('');
-  const [enderecoIp, setEnderecoIp] = useState('');
-  const [sistemaOperacional, setSistemaOperacional] = useState('Windows 10 Pro 64-bit');
-  const [dataInstalacao, setDataInstalacao] = useState(new Date().toISOString().split('T')[0]);
-  const [status, setStatus] = useState<Equipment['status']>('EM_USO');
-  const [observacoes, setObservacoes] = useState('');
+  const [tipo, setTipo] = useState<EquipmentType>(equipmentToEdit?.tipo || 'PDV');
+  const [nome, setNome] = useState(equipmentToEdit?.nome || 'PDV 01');
+  const [patrimonio, setPatrimonio] = useState(equipmentToEdit?.patrimonio || '');
+  const [posicaoCaixa, setPosicaoCaixa] = useState(equipmentToEdit?.posicaoCaixa || 'Frente de Caixa 01');
+  const [marca, setMarca] = useState(equipmentToEdit?.marca || 'Dell');
+  const [modelo, setModelo] = useState(equipmentToEdit?.modelo || 'OptiPlex 3050 Micro');
+  const [numeroSerie, setNumeroSerie] = useState(equipmentToEdit?.numeroSerie || '');
+  const [enderecoIp, setEnderecoIp] = useState(equipmentToEdit?.enderecoIp || '');
+  const [sistemaOperacional, setSistemaOperacional] = useState(equipmentToEdit?.sistemaOperacional || 'Windows 10 Pro 64-bit');
+  const [dataInstalacao, setDataInstalacao] = useState(
+    equipmentToEdit?.dataInstalacao || new Date().toISOString().split('T')[0]
+  );
+  const [status, setStatus] = useState<Equipment['status']>(equipmentToEdit?.status || 'EM_USO');
+  const [observacoes, setObservacoes] = useState(equipmentToEdit?.observacoes || '');
+
+  React.useEffect(() => {
+    if (equipmentToEdit) {
+      setTipo(equipmentToEdit.tipo || 'PDV');
+      setNome(equipmentToEdit.nome || '');
+      setPatrimonio(equipmentToEdit.patrimonio || '');
+      setPosicaoCaixa(equipmentToEdit.posicaoCaixa || '');
+      setMarca(equipmentToEdit.marca || '');
+      setModelo(equipmentToEdit.modelo || '');
+      setNumeroSerie(equipmentToEdit.numeroSerie || '');
+      setEnderecoIp(equipmentToEdit.enderecoIp || '');
+      setSistemaOperacional(equipmentToEdit.sistemaOperacional || '');
+      setDataInstalacao(equipmentToEdit.dataInstalacao || new Date().toISOString().split('T')[0]);
+      setStatus(equipmentToEdit.status || 'EM_USO');
+      setObservacoes(equipmentToEdit.observacoes || '');
+    } else {
+      setTipo('PDV');
+      setNome('PDV 01');
+      setPatrimonio('');
+      setPosicaoCaixa('Frente de Caixa 01');
+      setMarca('Dell');
+      setModelo('OptiPlex 3050 Micro');
+      setNumeroSerie('');
+      setEnderecoIp('');
+      setSistemaOperacional('Windows 10 Pro 64-bit');
+      setDataInstalacao(new Date().toISOString().split('T')[0]);
+      setStatus('EM_USO');
+      setObservacoes('');
+    }
+  }, [equipmentToEdit, isOpen]);
 
   if (!isOpen) return null;
 
@@ -1532,33 +1804,35 @@ export const NewStoreEquipmentModal: React.FC<NewStoreEquipmentModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!nome.trim()) {
-      alert('Informe o nome do equipamento.');
       return;
     }
 
-    onSave({
-      nome: nome.trim(),
-      patrimonio: patrimonio.trim() || undefined as any,
-      tipo,
-      marca: marca.trim() || undefined,
-      modelo: modelo.trim() || undefined,
-      marcaModelo: `${marca.trim()} ${modelo.trim()}`.trim(),
-      numeroSerie: numeroSerie.trim() || undefined,
-      clienteId: store.clienteId,
-      clienteNome: store.clienteNome,
-      lojaId: store.id,
-      lojaNome: store.nome,
-      lojaOrigem: store.nome,
-      posicaoCaixa: posicaoCaixa.trim() || undefined,
-      localizacaoAtual: 'LOJA',
-      status,
-      enderecoIp: enderecoIp.trim() || undefined,
-      sistemaOperacional: sistemaOperacional.trim() || undefined,
-      dataInstalacao: dataInstalacao || undefined,
-      dataPrimeiroCadastro: new Date().toISOString().split('T')[0],
-      tecnicoResponsavel: 'Carlos Silva',
-      observacoes: observacoes.trim() || undefined,
-    });
+    onSave(
+      {
+        nome: nome.trim(),
+        patrimonio: patrimonio.trim() || (undefined as any),
+        tipo,
+        marca: marca.trim() || undefined,
+        modelo: modelo.trim() || undefined,
+        marcaModelo: `${marca.trim()} ${modelo.trim()}`.trim(),
+        numeroSerie: numeroSerie.trim() || undefined,
+        clienteId: store.clienteId,
+        clienteNome: store.clienteNome,
+        lojaId: store.id,
+        lojaNome: store.nome,
+        lojaOrigem: store.nome,
+        posicaoCaixa: posicaoCaixa.trim() || undefined,
+        localizacaoAtual: 'LOJA',
+        status,
+        enderecoIp: enderecoIp.trim() || undefined,
+        sistemaOperacional: sistemaOperacional.trim() || undefined,
+        dataInstalacao: dataInstalacao || undefined,
+        dataPrimeiroCadastro: equipmentToEdit?.dataPrimeiroCadastro || new Date().toISOString().split('T')[0],
+        tecnicoResponsavel: equipmentToEdit?.tecnicoResponsavel || 'Carlos Silva',
+        observacoes: observacoes.trim() || undefined,
+      },
+      equipmentToEdit?.id
+    );
   };
 
   return (
@@ -1570,7 +1844,7 @@ export const NewStoreEquipmentModal: React.FC<NewStoreEquipmentModalProps> = ({
               {store.nome}
             </div>
             <h3 className="font-extrabold text-base mt-0.5">
-              Registrar Equipamento na Loja
+              {equipmentToEdit ? 'Editar Equipamento da Loja' : 'Registrar Equipamento na Loja'}
             </h3>
           </div>
           <button type="button" onClick={onClose} className="text-slate-400 hover:text-white cursor-pointer">
@@ -1764,7 +2038,7 @@ export const NewStoreEquipmentModal: React.FC<NewStoreEquipmentModalProps> = ({
               type="submit"
               className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-sm cursor-pointer"
             >
-              Salvar Equipamento
+              {equipmentToEdit ? 'Salvar Alterações' : 'Cadastrar Equipamento'}
             </button>
           </div>
         </form>

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useChecklist } from '../context/ChecklistContext';
+import { SavedChecklistRecord } from '../types/checklist';
+import { ConfirmModal } from './ConfirmModal';
 import {
   X,
   History,
@@ -23,6 +25,13 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, onClose }) =
   const { savedRecords, loadSavedChecklist, deleteSavedChecklist } = useChecklist();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('ALL');
+  const [recordToDelete, setRecordToDelete] = useState<SavedChecklistRecord | null>(null);
+
+  const handleConfirmDeleteRecord = () => {
+    if (!recordToDelete) return;
+    deleteSavedChecklist(recordToDelete.id);
+    setRecordToDelete(null);
+  };
 
   if (!isOpen) return null;
 
@@ -190,12 +199,8 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, onClose }) =
 
                   <button
                     type="button"
-                    onClick={() => {
-                      if (window.confirm(`Excluir atendimento da máquina "${rec.machine.identificacao}"?`)) {
-                        deleteSavedChecklist(rec.id);
-                      }
-                    }}
-                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    onClick={() => setRecordToDelete(rec)}
+                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                     title="Excluir registro"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -211,12 +216,23 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, onClose }) =
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-200 rounded-lg"
+            className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-200 rounded-lg cursor-pointer"
           >
             Fechar
           </button>
         </div>
       </div>
+
+      {/* Confirmação de Exclusão de Checklist (In-App) */}
+      <ConfirmModal
+        isOpen={Boolean(recordToDelete)}
+        title={`Excluir Atendimento de "${recordToDelete?.machine.identificacao}"?`}
+        message={`Tem certeza que deseja excluir o registro de atendimento da máquina "${recordToDelete?.machine.identificacao}" (${recordToDelete?.machine.loja})?`}
+        confirmText="Excluir Atendimento"
+        onConfirm={handleConfirmDeleteRecord}
+        onCancel={() => setRecordToDelete(null)}
+        variant="danger"
+      />
     </div>
   );
 };
