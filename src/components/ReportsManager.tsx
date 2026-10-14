@@ -148,8 +148,8 @@ export const ReportsManager: React.FC = () => {
         const matches =
           item.equipment.nome.toLowerCase().includes(q) ||
           item.equipment.patrimonio.toLowerCase().includes(q) ||
-          item.equipment.numeroSerie.toLowerCase().includes(q) ||
-          item.equipment.lojaOrigem.toLowerCase().includes(q);
+          (item.equipment.numeroSerie && item.equipment.numeroSerie.toLowerCase().includes(q)) ||
+          ((item.equipment.lojaNome || item.equipment.lojaOrigem) && (item.equipment.lojaNome || item.equipment.lojaOrigem)!.toLowerCase().includes(q));
         if (!matches) return false;
       }
       return true;
@@ -262,7 +262,7 @@ export const ReportsManager: React.FC = () => {
         return (
           item.equipment.nome.toLowerCase().includes(q) ||
           item.equipment.patrimonio.toLowerCase().includes(q) ||
-          item.equipment.lojaOrigem.toLowerCase().includes(q)
+          Boolean((item.equipment.lojaNome || item.equipment.lojaOrigem) && (item.equipment.lojaNome || item.equipment.lojaOrigem)!.toLowerCase().includes(q))
         );
       }
       return true;
@@ -272,16 +272,16 @@ export const ReportsManager: React.FC = () => {
   // 4. DADOS: RELATÓRIO DE EQUIPAMENTOS (PARQUE & HARDWARE)
   const reportEquipamentosData = useMemo(() => {
     return equipments.filter((eq) => {
-      if (selectedStore !== 'ALL' && eq.lojaOrigem !== selectedStore) return false;
+      if (selectedStore !== 'ALL' && (eq.lojaOrigem !== selectedStore && eq.lojaNome !== selectedStore)) return false;
       if (selectedStatus !== 'ALL' && eq.status !== selectedStatus) return false;
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
         return (
           eq.nome.toLowerCase().includes(q) ||
           eq.patrimonio.toLowerCase().includes(q) ||
-          eq.numeroSerie.toLowerCase().includes(q) ||
-          eq.marcaModelo.toLowerCase().includes(q) ||
-          eq.lojaOrigem.toLowerCase().includes(q)
+          Boolean(eq.numeroSerie && eq.numeroSerie.toLowerCase().includes(q)) ||
+          Boolean(eq.marcaModelo && eq.marcaModelo.toLowerCase().includes(q)) ||
+          Boolean((eq.lojaNome || eq.lojaOrigem) && (eq.lojaNome || eq.lojaOrigem)!.toLowerCase().includes(q))
         );
       }
       return true;
@@ -339,8 +339,8 @@ export const ReportsManager: React.FC = () => {
         rows.push([
           item.equipment.nome,
           item.equipment.patrimonio,
-          item.equipment.numeroSerie,
-          item.equipment.lojaOrigem,
+          item.equipment.numeroSerie || '-',
+          item.equipment.lojaNome || item.equipment.lojaOrigem || '-',
           String(item.totalManutencoes),
           formatDateBR(item.primeiraManutencao),
           formatDateBR(item.ultimaManutencao),
@@ -365,11 +365,11 @@ export const ReportsManager: React.FC = () => {
         rows.push([
           item.nome,
           item.patrimonio,
-          item.lojaOrigem,
+          item.lojaOrigem || '-',
           formatDateTimeBR(item.dataEntrada),
           item.dataRetirada ? formatDateTimeBR(item.dataRetirada) : 'Ainda no Escritório',
           `${item.permanenciaDias} dias`,
-          item.destino,
+          item.destino || '-',
           item.tecnico || '-',
           item.resultado,
         ]);
@@ -388,7 +388,7 @@ export const ReportsManager: React.FC = () => {
         rows.push([
           item.equipment.nome,
           item.equipment.patrimonio,
-          item.equipment.lojaOrigem,
+          item.equipment.lojaNome || item.equipment.lojaOrigem || '-',
           String(item.ocorrenciasCount),
           item.problemasFrequentes.join(' | '),
           item.pecasRepetidas.join(' | ') || 'Nenhuma',
@@ -416,17 +416,17 @@ export const ReportsManager: React.FC = () => {
         rows.push([
           eq.nome,
           eq.patrimonio,
-          eq.numeroSerie,
+          eq.numeroSerie || '-',
           eq.tipo,
-          eq.marcaModelo,
-          eq.lojaOrigem,
+          eq.marcaModelo || `${eq.marca || ''} ${eq.modelo || ''}`.trim() || '-',
+          eq.lojaNome || eq.lojaOrigem || '-',
           eq.localizacaoAtual,
           EQUIPMENT_STATUS_LABELS[eq.status]?.label || eq.status,
-          eq.processador,
-          String(eq.memoriaRamGb),
-          `${eq.armazenamentoValor} ${eq.armazenamentoUnidade}`,
-          eq.tipoArmazenamento,
-          eq.sistemaOperacional,
+          eq.processador || '-',
+          String(eq.memoriaRamGb ?? '-'),
+          eq.armazenamentoValor ? `${eq.armazenamentoValor} ${eq.armazenamentoUnidade || 'GB'}` : '-',
+          eq.tipoArmazenamento || '-',
+          eq.sistemaOperacional || '-',
           formatDateBR(eq.dataPrimeiroCadastro),
         ]);
       });
@@ -1083,15 +1083,16 @@ export const ReportsManager: React.FC = () => {
                           {eq.nome} <span className="text-[10px] text-slate-400 font-normal">({eq.marcaModelo})</span>
                         </td>
                         <td className="py-3 px-3 font-mono font-bold text-slate-700">{eq.patrimonio}</td>
-                        <td className="py-3 px-3 font-mono text-slate-600">{eq.numeroSerie}</td>
-                        <td className="py-3 px-3">{eq.lojaOrigem}</td>
+                        <td className="py-3 px-3 font-mono text-slate-600">{eq.numeroSerie || '-'}</td>
+                        <td className="py-3 px-3">{eq.lojaNome || eq.lojaOrigem || '-'}</td>
                         <td className="py-3 px-3">
-                          <span className="font-semibold text-slate-900 block">{eq.processador}</span>
+                          <span className="font-semibold text-slate-900 block">{eq.processador || eq.marcaModelo || eq.tipo}</span>
                           <span className="text-[11px] text-slate-500 block">
-                            {eq.memoriaRamGb} GB RAM • {eq.armazenamentoValor} {eq.armazenamentoUnidade} ({eq.tipoArmazenamento.replace('_', ' ')})
+                            {eq.memoriaRamGb ? `${eq.memoriaRamGb} GB RAM` : ''}
+                            {eq.armazenamentoValor ? ` • ${eq.armazenamentoValor} ${eq.armazenamentoUnidade || 'GB'} ${eq.tipoArmazenamento ? `(${eq.tipoArmazenamento.replace('_', ' ')})` : ''}` : ''}
                           </span>
                         </td>
-                        <td className="py-3 px-3 text-slate-700">{eq.sistemaOperacional}</td>
+                        <td className="py-3 px-3 text-slate-700">{eq.sistemaOperacional || '-'}</td>
                         <td className="py-3 px-3">
                           <span
                             className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${statusConfig.badgeBg} ${statusConfig.textBadge}`}

@@ -42,6 +42,7 @@ interface ClientManagerProps {
   onOpenNewServiceOrderForStore?: (store: Store, equipment?: Equipment) => void;
   onOpenEquipmentDetail?: (equipment: Equipment) => void;
   onStartChecklist?: (machineData: { identificacao: string; loja: string; tecnico: string; tipo: MachineType }) => void;
+  onOpenServiceOrderForEquipment?: (equipment: Equipment) => void;
 }
 
 export const ClientManager: React.FC<ClientManagerProps> = ({
@@ -104,7 +105,7 @@ export const ClientManager: React.FC<ClientManagerProps> = ({
       const matchesClient =
         c.razaoSocial.toLowerCase().includes(lower) ||
         (c.nomeFantasia && c.nomeFantasia.toLowerCase().includes(lower)) ||
-        c.codigo.toLowerCase().includes(lower) ||
+        (c.codigo && c.codigo.toLowerCase().includes(lower)) ||
         (c.cnpj && c.cnpj.includes(lower)) ||
         (c.responsavel && c.responsavel.toLowerCase().includes(lower));
 

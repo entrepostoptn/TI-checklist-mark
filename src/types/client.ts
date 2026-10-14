@@ -1,6 +1,6 @@
 export interface Client {
   id: string;
-  codigo: string;          // Ex: CLI-001, MARK-01
+  codigo?: string;         // Ex: CLI-001, MARK-01
   razaoSocial: string;     // Nome da empresa / Razão Social
   nomeFantasia?: string;   // Nome Fantasia (Ex: Mark Security)
   cnpj?: string;           // CNPJ quando aplicável

@@ -695,7 +695,7 @@ export const ServiceOrderManager: React.FC<ServiceOrderManagerProps> = ({
                       onClick={() =>
                         onStartChecklistForMachine({
                           identificacao: order.identificacao,
-                          loja: order.lojaOrigem,
+                          loja: order.lojaNome || order.lojaOrigem || 'Não informada',
                           tecnico: order.tecnicoResponsavel,
                           tipo: (order.tipo as any) === 'PDV' ? 'PDV' : 'ESCRITORIO',
                         })

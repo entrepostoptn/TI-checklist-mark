@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { SyncProvider, useSync } from './context/SyncContext';
+import { ClientProvider } from './context/ClientContext';
 import { ChecklistProvider, useChecklist } from './context/ChecklistContext';
 import { ServiceOrderProvider, useServiceOrders } from './context/ServiceOrderContext';
 import { EquipmentProvider, useEquipment } from './context/EquipmentContext';
@@ -16,11 +17,12 @@ import { SyncStatusModal } from './components/SyncStatusModal';
 import { MultiDeviceModal } from './components/MultiDeviceModal';
 import { ServiceOrderManager } from './components/ServiceOrderManager';
 import { EquipmentManager } from './components/EquipmentManager';
+import { ClientManager } from './components/ClientManager';
 import { ReportsManager } from './components/ReportsManager';
 import { ServiceOrderModal } from './components/ServiceOrderModal';
 import { Equipment } from './types/equipment';
 import { MachineType } from './types/checklist';
-import { CheckCircle2, Sliders, Shield, AlertTriangle, WifiOff, Cloud, Monitor, Smartphone, QrCode } from 'lucide-react';
+import { CheckCircle2, Sliders, Shield, AlertTriangle, WifiOff, Cloud, Monitor, Smartphone, QrCode, RefreshCw } from 'lucide-react';
 
 const MainApp: React.FC = () => {
   const { viewMode, setViewMode, toastMessage, showToast, config, updateMachine } = useChecklist();
@@ -124,7 +126,12 @@ const MainApp: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {/* Module 1: Equipamentos & Patrimônio */}
+        {/* Module 1: Clientes & Filiais / Lojas */}
+        {activeMainTab === 'clients' && (
+          <ClientManager onOpenServiceOrderForEquipment={handleOpenServiceOrderForMachine} />
+        )}
+
+        {/* Module 2: Equipamentos & Patrimônio */}
         {activeMainTab === 'equipments' && (
           <EquipmentManager
             onStartChecklistForMachine={handleStartChecklistForMachine}
@@ -273,16 +280,96 @@ const MainApp: React.FC = () => {
   );
 };
 
+// Global Error Boundary to prevent white-screen crashes and provide easy recovery
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Erro na aplicação:', error, errorInfo);
+  }
+
+  handleReload = () => {
+    window.location.reload();
+  };
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-slate-800 rounded-2xl border border-slate-700 p-6 text-center shadow-2xl">
+            <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
+              <AlertTriangle className="w-8 h-8" />
+            </div>
+            <h2 className="text-xl font-bold mb-2">Ops! Ocorreu uma instabilidade</h2>
+            <p className="text-sm text-slate-300 mb-6">
+              A aplicação encontrou um erro inesperado ao carregar. Nenhum dado cadastrado foi perdido.
+            </p>
+            {this.state.error && (
+              <div className="bg-slate-950 p-3 rounded-xl border border-slate-700/60 text-left text-xs font-mono text-rose-300 mb-6 overflow-x-auto max-h-32">
+                {this.state.error.message}
+              </div>
+            )}
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <button
+                type="button"
+                onClick={this.handleReload}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl transition-colors cursor-pointer"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Recarregar Sistema
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    localStorage.removeItem('it_user_role');
+                  } catch {}
+                  window.location.reload();
+                }}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold text-sm rounded-xl transition-colors cursor-pointer"
+              >
+                Limpar Cache e Recarregar
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 export default function App() {
   return (
-    <SyncProvider>
-      <EquipmentProvider>
-        <ServiceOrderProvider>
-          <ChecklistProvider>
-            <MainApp />
-          </ChecklistProvider>
-        </ServiceOrderProvider>
-      </EquipmentProvider>
-    </SyncProvider>
+    <ErrorBoundary>
+      <SyncProvider>
+        <ClientProvider>
+          <EquipmentProvider>
+            <ServiceOrderProvider>
+              <ChecklistProvider>
+                <MainApp />
+              </ChecklistProvider>
+            </ServiceOrderProvider>
+          </EquipmentProvider>
+        </ClientProvider>
+      </SyncProvider>
+    </ErrorBoundary>
   );
 }

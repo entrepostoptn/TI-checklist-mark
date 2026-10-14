@@ -93,8 +93,9 @@ export const ServiceOrderModal: React.FC<ServiceOrderModalProps> = ({
       (e) =>
         e.nome.toLowerCase().includes(clean) ||
         e.patrimonio.toLowerCase().includes(clean) ||
-        e.numeroSerie.toLowerCase().includes(clean) ||
-        e.lojaOrigem.toLowerCase().includes(clean)
+        Boolean(e.numeroSerie && e.numeroSerie.toLowerCase().includes(clean)) ||
+        Boolean((e.lojaNome || e.lojaOrigem) && (e.lojaNome || e.lojaOrigem)!.toLowerCase().includes(clean)) ||
+        Boolean(e.clienteNome && e.clienteNome.toLowerCase().includes(clean))
     );
   }, [equipments, equipmentSearch]);
 
@@ -106,10 +107,10 @@ export const ServiceOrderModal: React.FC<ServiceOrderModalProps> = ({
     setSelectedEquipmentId(eq.id);
     setIdentificacao(eq.nome);
     setPatrimonio(eq.patrimonio);
-    setNumeroSerie(eq.numeroSerie);
-    setTipo(eq.tipo === 'PDV' ? 'PDV' : 'ESCRITORIO');
-    setLojaOrigem(eq.lojaOrigem);
-    if (!lojaDestino) setLojaDestino(eq.lojaOrigem);
+    setNumeroSerie(eq.numeroSerie || '');
+    setTipo((eq.tipo as any) === 'PDV' ? 'PDV' : 'ESCRITORIO');
+    setLojaOrigem(eq.lojaNome || eq.lojaOrigem || '');
+    if (!lojaDestino) setLojaDestino(eq.lojaNome || eq.lojaOrigem || '');
     if (!tecnicoResponsavel && eq.tecnicoResponsavel) setTecnicoResponsavel(eq.tecnicoResponsavel);
     setIsDropdownOpen(false);
     setEquipmentSearch('');
@@ -118,11 +119,11 @@ export const ServiceOrderModal: React.FC<ServiceOrderModalProps> = ({
   useEffect(() => {
     if (orderToEdit) {
       setSelectedEquipmentId(orderToEdit.equipamentoId || '');
-      setIdentificacao(orderToEdit.identificacao);
+      setIdentificacao(orderToEdit.identificacao || '');
       setPatrimonio(orderToEdit.patrimonio || '');
       setNumeroSerie(orderToEdit.numeroSerie || '');
-      setTipo(orderToEdit.tipo);
-      setLojaOrigem(orderToEdit.lojaOrigem);
+      setTipo(orderToEdit.tipo === 'PDV' ? 'PDV' : 'ESCRITORIO');
+      setLojaOrigem(orderToEdit.lojaNome || orderToEdit.lojaOrigem || '');
       setLojaDestino(orderToEdit.lojaDestino || '');
       setTecnicoResponsavel(orderToEdit.tecnicoResponsavel);
       setResponsavelEntrega(orderToEdit.responsavelEntrega || '');
@@ -415,7 +416,9 @@ export const ServiceOrderModal: React.FC<ServiceOrderModalProps> = ({
                 <div>
                   <span className="text-slate-400 block text-[10px] font-bold uppercase">Armazenamento</span>
                   <span className="font-bold text-slate-800">
-                    {selectedEquipment.armazenamentoValor} {selectedEquipment.armazenamentoUnidade} ({selectedEquipment.tipoArmazenamento.replace('_', ' ')})
+                    {selectedEquipment.armazenamentoValor
+                      ? `${selectedEquipment.armazenamentoValor} ${selectedEquipment.armazenamentoUnidade || 'GB'} ${selectedEquipment.tipoArmazenamento ? `(${selectedEquipment.tipoArmazenamento.replace('_', ' ')})` : ''}`
+                      : 'Não especificado'}
                   </span>
                 </div>
                 <div>

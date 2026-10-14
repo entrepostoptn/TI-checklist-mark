@@ -117,7 +117,7 @@ export const ServiceOrderFastModal: React.FC<ServiceOrderFastModalProps> = ({
     return (
       c.razaoSocial.toLowerCase().includes(lower) ||
       (c.nomeFantasia && c.nomeFantasia.toLowerCase().includes(lower)) ||
-      c.codigo.toLowerCase().includes(lower) ||
+      (c.codigo && c.codigo.toLowerCase().includes(lower)) ||
       (c.cnpj && c.cnpj.includes(lower))
     );
   });

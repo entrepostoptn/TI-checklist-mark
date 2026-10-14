@@ -57,21 +57,21 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({
 
   useEffect(() => {
     if (equipmentToEdit) {
-      setNome(equipmentToEdit.nome);
-      setPatrimonio(equipmentToEdit.patrimonio);
-      setNumeroSerie(equipmentToEdit.numeroSerie);
-      setTipo(equipmentToEdit.tipo);
-      setMarcaModelo(equipmentToEdit.marcaModelo);
-      setLojaOrigem(equipmentToEdit.lojaOrigem);
-      setLocalizacaoAtual(equipmentToEdit.localizacaoAtual);
-      setStatus(equipmentToEdit.status);
-      setProcessador(equipmentToEdit.processador);
-      setMemoriaRamGb(equipmentToEdit.memoriaRamGb);
-      setArmazenamentoValor(equipmentToEdit.armazenamentoValor);
-      setArmazenamentoUnidade(equipmentToEdit.armazenamentoUnidade);
-      setTipoArmazenamento(equipmentToEdit.tipoArmazenamento);
-      setSistemaOperacional(equipmentToEdit.sistemaOperacional);
-      setDataPrimeiroCadastro(equipmentToEdit.dataPrimeiroCadastro);
+      setNome(equipmentToEdit.nome || '');
+      setPatrimonio(equipmentToEdit.patrimonio || '');
+      setNumeroSerie(equipmentToEdit.numeroSerie || '');
+      setTipo(equipmentToEdit.tipo || 'PDV');
+      setMarcaModelo(equipmentToEdit.marcaModelo || '');
+      setLojaOrigem(equipmentToEdit.lojaOrigem || equipmentToEdit.lojaNome || '');
+      setLocalizacaoAtual(equipmentToEdit.localizacaoAtual || 'LOJA');
+      setStatus(equipmentToEdit.status || 'EM_USO');
+      setProcessador(equipmentToEdit.processador || '');
+      setMemoriaRamGb(equipmentToEdit.memoriaRamGb ?? 8);
+      setArmazenamentoValor(equipmentToEdit.armazenamentoValor ?? 240);
+      setArmazenamentoUnidade(equipmentToEdit.armazenamentoUnidade || 'GB');
+      setTipoArmazenamento(equipmentToEdit.tipoArmazenamento || 'SSD_SATA');
+      setSistemaOperacional(equipmentToEdit.sistemaOperacional || 'Windows 10 Pro 64-bit');
+      setDataPrimeiroCadastro(equipmentToEdit.dataPrimeiroCadastro || new Date().toISOString().split('T')[0]);
       setObservacoes(equipmentToEdit.observacoes || '');
     } else {
       setNome('');

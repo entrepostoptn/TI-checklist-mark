@@ -87,9 +87,14 @@ export const EquipmentManager: React.FC<EquipmentManagerProps> = ({
       !term ||
       eq.nome.toLowerCase().includes(term) ||
       eq.patrimonio.toLowerCase().includes(term) ||
-      eq.numeroSerie.toLowerCase().includes(term) ||
-      eq.lojaOrigem.toLowerCase().includes(term) ||
-      eq.marcaModelo.toLowerCase().includes(term) ||
+      (eq.numeroSerie && eq.numeroSerie.toLowerCase().includes(term)) ||
+      (eq.lojaOrigem && eq.lojaOrigem.toLowerCase().includes(term)) ||
+      (eq.lojaNome && eq.lojaNome.toLowerCase().includes(term)) ||
+      (eq.clienteNome && eq.clienteNome.toLowerCase().includes(term)) ||
+      (eq.marcaModelo && eq.marcaModelo.toLowerCase().includes(term)) ||
+      (eq.marca && eq.marca.toLowerCase().includes(term)) ||
+      (eq.modelo && eq.modelo.toLowerCase().includes(term)) ||
+      (eq.posicaoCaixa && eq.posicaoCaixa.toLowerCase().includes(term)) ||
       (eq.tecnicoResponsavel && eq.tecnicoResponsavel.toLowerCase().includes(term));
 
     return matchesStatus && matchesStore && matchesType && matchesSearch;

@@ -615,7 +615,7 @@ export const EquipmentProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (patch.numeroSerie) {
       const cleanSerial = patch.numeroSerie.trim().toUpperCase();
       const duplicate = equipments.some(
-        (e) => e.id !== id && e.numeroSerie.trim().toUpperCase() === cleanSerial
+        (e) => e.id !== id && (e.numeroSerie || '').trim().toUpperCase() === cleanSerial
       );
       if (duplicate) {
         return { success: false, error: `O número de série "${patch.numeroSerie}" já está em uso por outro equipamento.` };

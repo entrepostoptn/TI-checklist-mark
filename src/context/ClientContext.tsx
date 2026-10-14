@@ -281,7 +281,7 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       // Check duplicate code if provided
       if (trimmedCodigo) {
         const duplicate = clients.find(
-          (c) => c.codigo.trim().toUpperCase() === trimmedCodigo
+          (c) => (c.codigo || '').trim().toUpperCase() === trimmedCodigo
         );
         if (duplicate) {
           return {
@@ -336,10 +336,10 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
 
       // Check duplicate code if changed
-      if (patch.codigo && patch.codigo.trim().toUpperCase() !== existing.codigo.trim().toUpperCase()) {
+      if (patch.codigo && patch.codigo.trim().toUpperCase() !== (existing.codigo || '').trim().toUpperCase()) {
         const trimmed = patch.codigo.trim().toUpperCase();
         const duplicate = clients.find(
-          (c) => c.id !== id && c.codigo.trim().toUpperCase() === trimmed
+          (c) => c.id !== id && (c.codigo || '').trim().toUpperCase() === trimmed
         );
         if (duplicate) {
           return {
@@ -533,7 +533,7 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         (c) =>
           c.razaoSocial.toLowerCase().includes(lower) ||
           (c.nomeFantasia && c.nomeFantasia.toLowerCase().includes(lower)) ||
-          c.codigo.toLowerCase().includes(lower) ||
+          (c.codigo && c.codigo.toLowerCase().includes(lower)) ||
           (c.cnpj && c.cnpj.includes(lower)) ||
           (c.responsavel && c.responsavel.toLowerCase().includes(lower))
       );

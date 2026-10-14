@@ -118,7 +118,7 @@ export const EquipmentDetailModal: React.FC<EquipmentDetailModalProps> = ({
       patrimonio: equipment.patrimonio,
       dataHoraEntrada: movDataHoraEntrada,
       dataHoraRetirada: movDataHoraRetirada || undefined,
-      lojaOrigem: movLojaOrigem || equipment.lojaOrigem,
+      lojaOrigem: movLojaOrigem || equipment.lojaNome || equipment.lojaOrigem || 'Não informada',
       destino: movDestino || undefined,
       responsavelEntrega: movResponsavelEntrega || 'Suporte Loja',
       tecnicoResponsavel: movTecnico || 'Carlos Silva',
@@ -289,9 +289,10 @@ export const EquipmentDetailModal: React.FC<EquipmentDetailModalProps> = ({
                 </div>
 
                 <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                  <span className="text-[10px] uppercase font-bold text-slate-500 block">Armazenamento</span>
                   <span className="text-sm font-bold text-slate-900 block mt-0.5">
-                    {equipment.armazenamentoValor} {equipment.armazenamentoUnidade} ({equipment.tipoArmazenamento.replace('_', ' ')})
+                    {equipment.armazenamentoValor
+                      ? `${equipment.armazenamentoValor} ${equipment.armazenamentoUnidade || 'GB'} ${equipment.tipoArmazenamento ? `(${equipment.tipoArmazenamento.replace('_', ' ')})` : ''}`
+                      : 'Não especificado'}
                   </span>
                 </div>
 
@@ -885,7 +886,7 @@ export const EquipmentDetailModal: React.FC<EquipmentDetailModalProps> = ({
               onClick={() => {
                 onStartChecklist({
                   identificacao: equipment.nome,
-                  loja: equipment.lojaOrigem,
+                  loja: equipment.lojaNome || equipment.lojaOrigem || 'Loja Principal',
                   tecnico: equipment.tecnicoResponsavel || 'Carlos Silva',
                   tipo: equipment.tipo === 'PDV' ? 'PDV' : 'ESCRITORIO',
                 });
