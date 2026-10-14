@@ -680,9 +680,25 @@ export const EquipmentProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     // 2. Subscribe in real-time to central Firestore collections
     const unsubEquipments = subscribeToEquipments(
       (remoteEquipments) => {
-        setEquipments(remoteEquipments);
+        let finalEquipments = remoteEquipments;
+        if (remoteEquipments && remoteEquipments.length > 0) {
+          const existingIds = new Set(remoteEquipments.map((e) => e.id));
+          const missingPata = PATA_NEGRA_EQUIPMENTS.filter((eq) => !existingIds.has(eq.id));
+          if (missingPata.length > 0) {
+            finalEquipments = [...missingPata, ...remoteEquipments];
+            missingPata.forEach((eq) => {
+              syncSaveEquipment(eq).catch(() => {});
+            });
+          }
+        } else {
+          finalEquipments = INITIAL_DEMO_EQUIPMENTS;
+          INITIAL_DEMO_EQUIPMENTS.forEach((eq) => {
+            syncSaveEquipment(eq).catch(() => {});
+          });
+        }
+        setEquipments(finalEquipments);
         try {
-          localStorage.setItem(STORAGE_KEY_EQUIPMENTS, JSON.stringify(remoteEquipments));
+          localStorage.setItem(STORAGE_KEY_EQUIPMENTS, JSON.stringify(finalEquipments));
         } catch {
           // ignore
         }

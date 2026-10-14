@@ -367,23 +367,47 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     const unsubClients = subscribeToClients((syncedClients) => {
       if (syncedClients && syncedClients.length > 0) {
-        setClients(syncedClients);
+        const hasPata = syncedClients.some(
+          (c) =>
+            c.id === PATA_NEGRA_CLIENT.id ||
+            c.nomeFantasia?.toLowerCase().includes('pata negra') ||
+            c.razaoSocial.toLowerCase().includes('pata negra')
+        );
+        let finalClients = syncedClients;
+        if (!hasPata) {
+          finalClients = [PATA_NEGRA_CLIENT, ...syncedClients];
+          syncSaveClient(PATA_NEGRA_CLIENT);
+        }
+        setClients(finalClients);
         try {
-          localStorage.setItem(STORAGE_KEY_CLIENTS, JSON.stringify(syncedClients));
+          localStorage.setItem(STORAGE_KEY_CLIENTS, JSON.stringify(finalClients));
         } catch {
           // ignore
         }
+      } else {
+        setClients(INITIAL_DEMO_CLIENTS);
+        INITIAL_DEMO_CLIENTS.forEach((c) => syncSaveClient(c));
       }
     });
 
     const unsubStores = subscribeToStores((syncedStores) => {
       if (syncedStores && syncedStores.length > 0) {
-        setStores(syncedStores);
+        const existingStoreIds = new Set(syncedStores.map((s) => s.id));
+        const missingPataStores = PATA_NEGRA_STORES.filter((s) => !existingStoreIds.has(s.id));
+        let finalStores = syncedStores;
+        if (missingPataStores.length > 0) {
+          finalStores = [...missingPataStores, ...syncedStores];
+          missingPataStores.forEach((st) => syncSaveStore(st));
+        }
+        setStores(finalStores);
         try {
-          localStorage.setItem(STORAGE_KEY_STORES, JSON.stringify(syncedStores));
+          localStorage.setItem(STORAGE_KEY_STORES, JSON.stringify(finalStores));
         } catch {
           // ignore
         }
+      } else {
+        setStores(INITIAL_DEMO_STORES);
+        INITIAL_DEMO_STORES.forEach((s) => syncSaveStore(s));
       }
     });
 

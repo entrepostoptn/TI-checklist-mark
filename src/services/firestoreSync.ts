@@ -123,28 +123,28 @@ export async function checkAndInitializeClientsAndStores(
   initialClients: Client[],
   initialStores: Store[]
 ): Promise<boolean> {
-  const configDocRef = doc(db, 'system_config', 'clients_stores_init');
+  const configDocRef = doc(db, 'system_config', 'clients_stores_init_v2');
   try {
     const snap = await getDoc(configDocRef);
-    if (snap.exists() && snap.data()?.initialized) {
+    if (!snap.exists() || !snap.data()?.pataNegraSeeded) {
+      const batch = writeBatch(db);
+      for (const cli of initialClients) {
+        batch.set(doc(db, 'clients', cli.id), cli, { merge: true });
+      }
+      for (const st of initialStores) {
+        batch.set(doc(db, 'stores', st.id), st, { merge: true });
+      }
+
+      batch.set(configDocRef, {
+        initialized: true,
+        pataNegraSeeded: true,
+        seededAt: new Date().toISOString(),
+        updatedAt: serverTimestamp(),
+      });
+
+      await batch.commit();
       return true;
     }
-
-    const batch = writeBatch(db);
-    for (const cli of initialClients) {
-      batch.set(doc(db, 'clients', cli.id), cli);
-    }
-    for (const st of initialStores) {
-      batch.set(doc(db, 'stores', st.id), st);
-    }
-
-    batch.set(configDocRef, {
-      initialized: true,
-      seededAt: new Date().toISOString(),
-      updatedAt: serverTimestamp(),
-    });
-
-    await batch.commit();
     return true;
   } catch (err) {
     console.warn('Falha ao inicializar clientes/lojas no Firestore (modo offline ou permissão)', err);

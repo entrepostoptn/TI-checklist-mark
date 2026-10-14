@@ -1,6 +1,6 @@
 // Service Worker para Checklist TI (PWA)
 // Versão do cache de assets estáticos da aplicação
-const CACHE_NAME = 'checklist-ti-v3';
+const CACHE_NAME = 'checklist-ti-v5-pata-negra';
 
 // Lista de rotas essenciais para cache offline inicial
 const PRECACHE_ASSETS = [
