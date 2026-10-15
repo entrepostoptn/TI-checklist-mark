@@ -208,8 +208,111 @@ export const AuditHistoryView: React.FC = () => {
         </div>
       </div>
 
-      {/* Audit Logs Table (Requirement 5) */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+      {/* Mobile View: High-efficiency, touch-friendly Audit Cards */}
+      <div className="block md:hidden space-y-2.5">
+        {filteredLogs.length === 0 ? (
+          <div className="py-12 text-center text-slate-400 bg-white rounded-2xl border border-slate-200 p-6 text-xs">
+            Nenhum registro de modificação encontrado com os filtros selecionados.
+          </div>
+        ) : (
+          filteredLogs.map((log) => {
+            const dateObj = new Date(log.dataHora);
+            const formattedDate = dateObj.toLocaleDateString('pt-BR');
+            const formattedTime = dateObj.toLocaleTimeString('pt-BR', {
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+            });
+
+            return (
+              <div
+                key={log.id}
+                className="p-3.5 rounded-2xl border border-slate-200/90 bg-white shadow-xs space-y-2.5"
+              >
+                {/* Header: User & Timestamp */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-6 h-6 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-[10px] shrink-0">
+                      {log.usuarioNome.charAt(0)}
+                    </div>
+                    <span className="font-bold text-xs text-slate-900 truncate">{log.usuarioNome}</span>
+                  </div>
+
+                  <div className="text-right font-mono text-[10px] text-slate-500 shrink-0">
+                    <span className="font-bold">{formattedDate}</span> <span className="text-slate-400">{formattedTime}</span>
+                  </div>
+                </div>
+
+                {/* Badges: Action & Unit */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                      log.acao === 'LOGIN' || log.acao === 'CONCLUSAO' || log.acao === 'ATIVACAO'
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : log.acao === 'INATIVACAO' || log.acao === 'EXCLUSAO'
+                        ? 'bg-rose-100 text-rose-800'
+                        : log.acao === 'REABERTURA'
+                        ? 'bg-amber-100 text-amber-900'
+                        : 'bg-blue-100 text-blue-800'
+                    }`}
+                  >
+                    {log.acao}
+                  </span>
+
+                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700">
+                    {log.tipoRegistro}
+                  </span>
+
+                  {log.unidadeNome && (
+                    <span className="text-[11px] text-slate-600 flex items-center gap-1 truncate max-w-[180px]">
+                      <Building2 className="w-3 h-3 text-amber-600 shrink-0" />
+                      <span className="truncate">{log.unidadeNome}</span>
+                    </span>
+                  )}
+                </div>
+
+                {/* Modified Field and Values */}
+                {(log.campoModificado || log.valorAnterior || log.valorNovo) && (
+                  <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-xs space-y-1">
+                    {log.campoModificado && (
+                      <div className="text-[11px] font-semibold text-slate-600">
+                        Campo: <span className="text-slate-900">{log.campoModificado}</span>
+                      </div>
+                    )}
+                    {(log.valorAnterior || log.valorNovo) && (
+                      <div className="font-mono text-[11px] space-y-0.5">
+                        {log.valorAnterior && (
+                          <div className="text-slate-400 line-through truncate">
+                            {log.valorAnterior}
+                          </div>
+                        )}
+                        {log.valorNovo && (
+                          <div className="text-emerald-700 font-bold truncate">
+                            {log.valorNovo}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Details / Reason */}
+                <div className="text-xs text-slate-700">
+                  <div>{log.detalhes || 'Operação registrada'}</div>
+                  {log.motivo && (
+                    <div className="text-[11px] text-amber-800 font-semibold italic mt-0.5">
+                      Motivo: "{log.motivo}"
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Desktop Audit Logs Table */}
+      <div className="hidden md:block bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>

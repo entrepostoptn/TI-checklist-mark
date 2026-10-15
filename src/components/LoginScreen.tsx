@@ -117,13 +117,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
             <button
               type="submit"
               disabled={isLoading || !username.trim() || !password}
-              className="w-full mt-2 py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-full mt-3 min-h-[46px] py-3 px-4 rounded-xl font-bold text-sm bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white shadow-md shadow-blue-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <span>Validando acesso...</span>
               ) : (
                 <>
-                  <span>Entrar</span>
+                  <span>Entrar no Sistema</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}

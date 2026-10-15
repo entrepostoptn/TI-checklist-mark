@@ -16,6 +16,7 @@ import {
   FileSpreadsheet,
   Users,
   Monitor,
+  BookOpen,
 } from 'lucide-react';
 
 interface DashboardViewProps {
@@ -65,33 +66,33 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         )}
       </div>
 
-      {/* 3 Core Priority Cards: Atendimento / Ordem de Serviço, Checklist, Relatórios (Requirement 4) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+      {/* 4 Core Priority Cards: Atendimento / OS, Checklist, Base de Conhecimento, Relatórios (Requirement 4 & 5) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-5">
         {/* 1. Atendimento / Ordem de Serviço */}
-        <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-          <div className="space-y-3">
-            <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-              <Wrench className="w-6 h-6" />
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
+          <div className="space-y-2.5">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+              <Wrench className="w-5 h-5" />
             </div>
 
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-slate-900">
-                Atendimento & Ordens de Serviço
+              <h2 className="text-sm sm:text-base font-bold text-slate-900 leading-snug">
+                Atendimento & OS
               </h2>
-              <p className="text-xs text-slate-500 mt-1">
-                Abertura, acompanhamento e finalização de manutenções.
+              <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 line-clamp-2">
+                Abertura, acompanhamento e histórico de manutenção.
               </p>
             </div>
 
-            <div className="pt-2 flex items-center gap-2 text-xs text-slate-600">
-              <Clock className="w-4 h-4 text-blue-500" />
+            <div className="pt-1 flex items-center gap-1.5 text-xs text-slate-600">
+              <Clock className="w-3.5 h-3.5 text-blue-500 shrink-0" />
               <span>
                 <b className="text-slate-900">{activeOrders.length}</b> em andamento
               </span>
             </div>
           </div>
 
-          <div className="pt-5 mt-4 border-t border-slate-100 flex items-center gap-2">
+          <div className="pt-3 mt-3 border-t border-slate-100 flex items-center gap-2">
             <button
               type="button"
               onClick={() => {
@@ -101,115 +102,149 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   onNavigate('legacy_service_orders');
                 }
               }}
-              className="flex-1 py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+              className="flex-1 py-2 px-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-1 shadow-xs transition-colors cursor-pointer min-h-[38px]"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-3.5 h-3.5" />
               <span>Nova OS</span>
             </button>
 
             <button
               type="button"
               onClick={() => onNavigate('legacy_service_orders')}
-              className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs flex items-center gap-1 transition-colors cursor-pointer"
+              className="py-2 px-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs flex items-center gap-1 transition-colors cursor-pointer min-h-[38px]"
               title="Consultar todas as ordens de serviço"
             >
-              <span>Consultar</span>
+              <span>Ver</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
 
         {/* 2. Checklist de Manutenção */}
-        <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-          <div className="space-y-3">
-            <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-              <ClipboardCheck className="w-6 h-6" />
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
+          <div className="space-y-2.5">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+              <ClipboardCheck className="w-5 h-5" />
             </div>
 
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-slate-900">
-                Checklist de Manutenção
+              <h2 className="text-sm sm:text-base font-bold text-slate-900 leading-snug">
+                Checklist
               </h2>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 line-clamp-2">
                 Vistorias técnicas, aberturas de loja e conformidades.
               </p>
             </div>
 
-            <div className="pt-2 flex items-center gap-2 text-xs text-slate-600">
-              <Clock className="w-4 h-4 text-amber-500" />
+            <div className="pt-1 flex items-center gap-1.5 text-xs text-slate-600">
+              <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
               <span>
-                <b className="text-slate-900">{pendingChecklists.length}</b> pendentes / em andamento
+                <b className="text-slate-900">{pendingChecklists.length}</b> pendentes
               </span>
             </div>
           </div>
 
-          <div className="pt-5 mt-4 border-t border-slate-100 flex items-center gap-2">
+          <div className="pt-3 mt-3 border-t border-slate-100 flex items-center gap-2">
             <button
               type="button"
               onClick={onOpenNewChecklistModal}
-              className="flex-1 py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+              className="flex-1 py-2 px-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1 shadow-xs transition-colors cursor-pointer min-h-[38px]"
             >
-              <Plus className="w-4 h-4" />
-              <span>Novo Checklist</span>
+              <Plus className="w-3.5 h-3.5" />
+              <span>Iniciar</span>
             </button>
 
             <button
               type="button"
               onClick={() => onNavigate('checklists')}
-              className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs flex items-center gap-1 transition-colors cursor-pointer"
+              className="py-2 px-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs flex items-center gap-1 transition-colors cursor-pointer min-h-[38px]"
               title="Consultar checklists da rede"
             >
-              <span>Consultar</span>
+              <span>Ver</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
 
-        {/* 3. Relatórios */}
-        <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-          <div className="space-y-3">
-            <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <FileText className="w-6 h-6" />
+        {/* 3. Base de Conhecimento (Requirement 4 & 5) */}
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
+          <div className="space-y-2.5">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <BookOpen className="w-5 h-5" />
             </div>
 
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-slate-900">
-                Relatórios Operacionais
+              <h2 className="text-sm sm:text-base font-bold text-slate-900 leading-snug">
+                Base de Conhecimento
               </h2>
-              <p className="text-xs text-slate-500 mt-1">
-                Indicadores técnicos, histórico e exportação de dados.
+              <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 line-clamp-2">
+                Procedimentos operacionais, manuais técnicos e passo a passo.
               </p>
             </div>
 
-            <div className="pt-2 flex items-center gap-2 text-xs text-slate-600">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-              <span>Estatísticas em tempo real</span>
+            <div className="pt-1 flex items-center gap-1.5 text-xs text-slate-600">
+              <CheckCircle2 className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+              <span>Procedimentos Mark Security</span>
             </div>
           </div>
 
-          <div className="pt-5 mt-4 border-t border-slate-100 flex items-center gap-2">
+          <div className="pt-3 mt-3 border-t border-slate-100 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onNavigate('knowledge_base')}
+              className="w-full py-2 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-colors cursor-pointer min-h-[38px]"
+            >
+              <span>Acessar Base</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+
+        {/* 4. Relatórios Operacionais */}
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
+          <div className="space-y-2.5">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <FileText className="w-5 h-5" />
+            </div>
+
+            <div>
+              <h2 className="text-sm sm:text-base font-bold text-slate-900 leading-snug">
+                Relatórios
+              </h2>
+              <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 line-clamp-2">
+                Indicadores técnicos, histórico e métricas de lojas.
+              </p>
+            </div>
+
+            <div className="pt-1 flex items-center gap-1.5 text-xs text-slate-600">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+              <span>Tempo real & exportação</span>
+            </div>
+          </div>
+
+          <div className="pt-3 mt-3 border-t border-slate-100 flex items-center gap-2">
             <button
               type="button"
               onClick={() => onNavigate('legacy_reports')}
-              className="w-full py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+              className="w-full py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-colors cursor-pointer min-h-[38px]"
             >
-              <span>Visualizar Relatórios</span>
-              <ArrowRight className="w-4 h-4" />
+              <span>Visualizar</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
       </div>
 
-      {/* Recent Activity Table (Clean and Compact) */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-sm space-y-4">
+      {/* Recent Activity Table with Mobile Card View Fallback */}
+      <div className="bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-6 shadow-xs space-y-3.5">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-          <h3 className="font-bold text-sm text-slate-900">
+          <h3 className="font-bold text-xs sm:text-sm text-slate-900">
             Atendimentos Recentes
           </h3>
           <button
             type="button"
             onClick={() => onNavigate('legacy_service_orders')}
-            className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer"
+            className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer py-1 px-2 rounded-lg hover:bg-blue-50"
           >
             <span>Ver todas</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -221,51 +256,97 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             Nenhuma ordem de serviço cadastrada recentemente.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="text-slate-400 uppercase tracking-wider text-[10px] border-b border-slate-100">
-                  <th className="py-2 px-3">OS</th>
-                  <th className="py-2 px-3">Equipamento / Loja</th>
-                  <th className="py-2 px-3">Defeito Relatado</th>
-                  <th className="py-2 px-3">Status</th>
-                  <th className="py-2 px-3 text-right">Data</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {recentOrders.map((os: ServiceOrder) => (
-                  <tr key={os.id} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="py-2.5 px-3 font-mono font-bold text-slate-900">
+          <>
+            {/* Mobile View: Clean Touch Cards */}
+            <div className="block sm:hidden space-y-2.5">
+              {recentOrders.map((os: ServiceOrder) => (
+                <div
+                  key={os.id}
+                  onClick={() => onNavigate('legacy_service_orders')}
+                  className="p-3 rounded-xl border border-slate-200/80 bg-slate-50/50 hover:bg-blue-50/40 transition-colors cursor-pointer space-y-1.5"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono font-bold text-xs text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200/60">
                       {os.numeroOs || os.id}
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <div className="font-semibold text-slate-800">{os.identificacao}</div>
-                      <div className="text-[11px] text-slate-500">{os.lojaNome || os.lojaOrigem || 'Matriz'}</div>
-                    </td>
-                    <td className="py-2.5 px-3 text-slate-600 max-w-xs truncate">
-                      {os.defeitoRelatado}
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <span
-                        className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          os.status === 'CONCLUIDA'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : os.status === 'CANCELADA'
-                            ? 'bg-slate-100 text-slate-600'
-                            : 'bg-amber-100 text-amber-800'
-                        }`}
-                      >
-                        {os.status}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3 text-right font-mono text-slate-500 text-[11px]">
+                    </span>
+                    <span
+                      className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        os.status === 'CONCLUIDA'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : os.status === 'CANCELADA'
+                          ? 'bg-slate-100 text-slate-600'
+                          : 'bg-amber-100 text-amber-800'
+                      }`}
+                    >
+                      {os.status}
+                    </span>
+                  </div>
+
+                  <div className="font-semibold text-xs text-slate-900 leading-snug">
+                    {os.identificacao}
+                  </div>
+
+                  <div className="text-[11px] text-slate-500 truncate">
+                    {os.defeitoRelatado}
+                  </div>
+
+                  <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-100">
+                    <span className="truncate">{os.lojaNome || os.lojaOrigem || 'Matriz'}</span>
+                    <span className="font-mono shrink-0">
                       {new Date(os.dataHoraAbertura || os.dataEntrada).toLocaleDateString('pt-BR')}
-                    </td>
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop View: Full Table */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="text-slate-400 uppercase tracking-wider text-[10px] border-b border-slate-100">
+                    <th className="py-2 px-3">OS</th>
+                    <th className="py-2 px-3">Equipamento / Loja</th>
+                    <th className="py-2 px-3">Defeito Relatado</th>
+                    <th className="py-2 px-3">Status</th>
+                    <th className="py-2 px-3 text-right">Data</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {recentOrders.map((os: ServiceOrder) => (
+                    <tr key={os.id} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="py-2.5 px-3 font-mono font-bold text-slate-900">
+                        {os.numeroOs || os.id}
+                      </td>
+                      <td className="py-2.5 px-3">
+                        <div className="font-semibold text-slate-800">{os.identificacao}</div>
+                        <div className="text-[11px] text-slate-500">{os.lojaNome || os.lojaOrigem || 'Matriz'}</div>
+                      </td>
+                      <td className="py-2.5 px-3 text-slate-600 max-w-xs truncate">
+                        {os.defeitoRelatado}
+                      </td>
+                      <td className="py-2.5 px-3">
+                        <span
+                          className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            os.status === 'CONCLUIDA'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : os.status === 'CANCELADA'
+                              ? 'bg-slate-100 text-slate-600'
+                              : 'bg-amber-100 text-amber-800'
+                          }`}
+                        >
+                          {os.status}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-mono text-slate-500 text-[11px]">
+                        {new Date(os.dataHoraAbertura || os.dataEntrada).toLocaleDateString('pt-BR')}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 

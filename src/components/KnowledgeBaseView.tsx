@@ -20,6 +20,7 @@ import {
   ExternalLink,
   Printer,
   Sparkles,
+  ArrowLeft,
 } from 'lucide-react';
 
 // Artigos operacionais pré-cadastrados da Mark Security
@@ -395,9 +396,9 @@ export const KnowledgeBaseView: React.FC = () => {
       </div>
 
       {/* Main Grid: Articles List & Reader */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
         {/* Articles List (4 or 5 columns on desktop) */}
-        <div className="lg:col-span-5 space-y-3">
+        <div className={`lg:col-span-5 space-y-3 ${selectedArticle ? 'hidden lg:block' : 'block'}`}>
           {filteredArticles.length === 0 ? (
             <div className="p-8 text-center bg-white rounded-2xl border border-slate-200 text-slate-500 text-xs">
               Nenhum artigo encontrado com os filtros selecionados.
@@ -409,7 +410,7 @@ export const KnowledgeBaseView: React.FC = () => {
                 <div
                   key={art.id}
                   onClick={() => setSelectedArticle(art)}
-                  className={`p-4 rounded-2xl border text-left cursor-pointer transition-all ${
+                  className={`p-3.5 sm:p-4 rounded-2xl border text-left cursor-pointer transition-all ${
                     isSelected
                       ? 'bg-blue-50/60 border-blue-300 shadow-sm'
                       : 'bg-white hover:bg-slate-50/80 border-slate-200/90'
@@ -445,11 +446,23 @@ export const KnowledgeBaseView: React.FC = () => {
         </div>
 
         {/* Article Detail View (7 columns) */}
-        <div className="lg:col-span-7">
+        <div className={`lg:col-span-7 ${!selectedArticle ? 'hidden lg:block' : 'block'}`}>
           {selectedArticle ? (
-            <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-7 shadow-xs space-y-6">
+            <div className="bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-7 shadow-xs space-y-5 sm:space-y-6">
+              {/* Mobile Back Button */}
+              <div className="lg:hidden">
+                <button
+                  type="button"
+                  onClick={() => setSelectedArticle(null)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold active:bg-slate-200"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Voltar aos Manuais</span>
+                </button>
+              </div>
+
               {/* Header */}
-              <div className="border-b border-slate-100 pb-5">
+              <div className="border-b border-slate-100 pb-4 sm:pb-5">
                 <div className="flex items-center gap-2 mb-2 flex-wrap">
                   <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-blue-100 text-blue-800">
                     {selectedArticle.categoriaNome}

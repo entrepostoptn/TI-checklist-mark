@@ -635,7 +635,7 @@ export const BranchesManager: React.FC<BranchesManagerProps> = ({
           </div>
 
           {/* Filters Bar */}
-          <div className="bg-white rounded-2xl border border-slate-200/90 p-3.5 shadow-xs flex flex-col md:flex-row gap-2.5">
+          <div className="bg-white rounded-2xl border border-slate-200/90 p-3 sm:p-3.5 shadow-xs flex flex-col md:flex-row gap-2.5">
             <div className="relative flex-1">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
@@ -643,15 +643,15 @@ export const BranchesManager: React.FC<BranchesManagerProps> = ({
                 value={filterOptions.busca}
                 onChange={(e) => setFilterOptions((p) => ({ ...p, busca: e.target.value }))}
                 placeholder="Buscar por nome fantasia, CNPJ ou código..."
-                className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap w-full md:w-auto">
               <select
                 value={filterOptions.municipio}
                 onChange={(e) => setFilterOptions((p) => ({ ...p, municipio: e.target.value }))}
-                className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:ring-2 focus:ring-blue-500"
+                className="flex-1 sm:flex-initial px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:ring-2 focus:ring-blue-500 max-w-full"
               >
                 <option value="">Todas as Cidades</option>
                 {uniqueCities.map((c) => (
@@ -662,9 +662,9 @@ export const BranchesManager: React.FC<BranchesManagerProps> = ({
               <select
                 value={filterOptions.uf}
                 onChange={(e) => setFilterOptions((p) => ({ ...p, uf: e.target.value }))}
-                className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:ring-2 focus:ring-blue-500"
+                className="w-24 sm:w-auto px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">Todos os Estados</option>
+                <option value="">UF</option>
                 {uniqueUfs.map((u) => (
                   <option key={u} value={u}>{u}</option>
                 ))}
@@ -674,17 +674,121 @@ export const BranchesManager: React.FC<BranchesManagerProps> = ({
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                  className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 min-h-[38px] min-w-[38px] flex items-center justify-center"
                   title="Limpar Filtros"
                 >
-                  <RotateCcw className="w-3.5 h-3.5" />
+                  <RotateCcw className="w-4 h-4" />
                 </button>
               )}
             </div>
           </div>
 
-          {/* Table of Branches */}
-          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+          {/* Mobile View: High-efficiency, touch-friendly store cards */}
+          <div className="block sm:hidden space-y-2.5">
+            {displayedBranches.length === 0 ? (
+              <div className="py-8 text-center text-slate-400 bg-white rounded-2xl border border-slate-200 text-xs">
+                Nenhuma filial encontrada para os filtros aplicados.
+              </div>
+            ) : (
+              displayedBranches.map((branch) => {
+                const isSelected = selectedBranchForActions?.id === branch.id;
+                const isInactive = branch.status === 'inativa';
+
+                return (
+                  <div
+                    key={branch.id}
+                    className={`p-3.5 rounded-2xl border transition-all ${
+                      isSelected
+                        ? 'bg-blue-50/70 border-blue-300 shadow-sm'
+                        : isInactive
+                        ? 'bg-slate-50/70 border-slate-200 opacity-80'
+                        : 'bg-white border-slate-200/90 shadow-xs'
+                    }`}
+                  >
+                    {/* Card Header */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="font-mono font-bold text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md shrink-0">
+                          {branch.idOriginal}
+                        </span>
+                        <h4 className="font-bold text-xs sm:text-sm text-slate-900 truncate">
+                          {branch.nomeFantasia}
+                        </h4>
+                      </div>
+
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+                          branch.status === 'ativa'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : 'bg-rose-100 text-rose-800'
+                        }`}
+                      >
+                        <span>{branch.status === 'ativa' ? '🟢' : '🔴'}</span>
+                        <span>{branch.status === 'ativa' ? 'Ativa' : 'Inativa'}</span>
+                      </span>
+                    </div>
+
+                    {/* Details */}
+                    <div className="mt-2 text-xs text-slate-500 space-y-0.5">
+                      <div className="flex items-center gap-1.5 font-mono text-[11px] text-slate-600">
+                        <span className="font-semibold text-slate-400">CNPJ:</span>
+                        <span>{branch.cnpj}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 truncate">
+                        <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span className="truncate">{branch.endereco} — {branch.municipio}/{branch.uf}</span>
+                      </div>
+                      {branch.telefone && (
+                        <div className="flex items-center gap-1.5">
+                          <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                          <span>{branch.telefone}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Card Touch Actions (Min height 40px for mobile thumb tap) */}
+                    <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedBranchForActions(branch);
+                          setActionsActiveTab('ATENDIMENTOS');
+                        }}
+                        className="flex-1 min-h-[42px] px-3 py-2 rounded-xl bg-blue-600 active:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                      >
+                        <Wrench className="w-4 h-4" />
+                        <span>Atendimentos / OS</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => onOpenChecklistForBranch(branch)}
+                        className="min-h-[42px] px-3 py-2 rounded-xl bg-amber-50 active:bg-amber-100 text-amber-900 border border-amber-200/80 font-bold text-xs flex items-center justify-center gap-1 cursor-pointer"
+                        title="Abrir checklist"
+                      >
+                        <ClipboardList className="w-4 h-4 text-amber-700" />
+                        <span>Checklist</span>
+                      </button>
+
+                      {permissions.podeEditarFiliais && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEdit(branch)}
+                          className="min-h-[42px] min-w-[42px] p-2 rounded-xl border border-slate-200 text-slate-600 active:bg-slate-100 flex items-center justify-center cursor-pointer"
+                          title="Editar dados cadastrais"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Desktop Table of Branches */}
+          <div className="hidden sm:block bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>

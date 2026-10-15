@@ -58,6 +58,10 @@ import {
   UserCheck,
   Building2,
   Lock,
+  LayoutDashboard,
+  ClipboardCheck,
+  Wrench,
+  BookOpen,
 } from 'lucide-react';
 
 const MainApp: React.FC = () => {
@@ -129,7 +133,7 @@ const MainApp: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100/70 text-slate-900 flex font-sans selection:bg-amber-200">
+    <div className="min-h-screen bg-slate-100/70 text-slate-900 flex font-sans selection:bg-amber-200 w-full max-w-full overflow-x-hidden">
       {/* Sidebar Navigation (Requirement 10) */}
       <SidebarNavigation
         currentPage={currentPage}
@@ -140,7 +144,7 @@ const MainApp: React.FC = () => {
       />
 
       {/* Main Content Column */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 w-full max-w-full overflow-x-hidden">
         {/* Offline Status Warning Bar */}
         {!isOnline && (
           <div className="bg-amber-600 text-white text-xs font-semibold px-4 py-2 flex items-center justify-center gap-2 shadow-sm z-30">
@@ -169,54 +173,58 @@ const MainApp: React.FC = () => {
         )}
 
         {/* Top Navbar Header */}
-        <header className="bg-white border-b border-slate-200/80 sticky top-0 z-20 px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+        <header className="bg-white border-b border-slate-200/80 sticky top-0 z-20 px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-2 sm:gap-4 max-w-full overflow-x-hidden">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(true)}
-              className="lg:hidden p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
+              className="lg:hidden p-1.5 sm:p-2 rounded-xl text-slate-700 hover:text-slate-900 hover:bg-slate-100 active:bg-slate-200 transition-colors cursor-pointer shrink-0"
               title="Abrir menu"
             >
               <Menu className="w-5 h-5" />
             </button>
 
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-sm sm:text-base text-slate-900 tracking-tight uppercase">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <span className="font-black text-xs sm:text-base text-slate-900 tracking-tight uppercase shrink-0">
                   Mark Security
                 </span>
-                <span className="text-slate-300">/</span>
-                <span className="text-xs sm:text-sm font-bold text-blue-700">
-                  {currentPage === 'dashboard' && 'Dashboard Operacional'}
-                  {currentPage === 'branches' && 'Matrizes e Filiais'}
-                  {currentPage === 'checklists' && 'Checklists das Unidades'}
-                  {currentPage === 'templates' && 'Modelos de Checklist'}
-                  {currentPage === 'knowledge_base' && 'Base de Conhecimento'}
-                  {currentPage === 'audit' && 'Histórico de Modificações'}
-                  {currentPage === 'users' && 'Gerenciamento de Usuários'}
-                  {currentPage === 'legacy_equipments' && 'Equipamentos & TI'}
+                <span className="text-slate-300 hidden sm:inline">/</span>
+                <span className="text-[11px] sm:text-sm font-bold text-blue-700 truncate max-w-[110px] sm:max-w-none">
+                  {currentPage === 'dashboard' && 'Dashboard'}
+                  {currentPage === 'branches' && 'Matrizes & Filiais'}
+                  {currentPage === 'checklists' && 'Checklists'}
+                  {currentPage === 'templates' && 'Modelos'}
+                  {currentPage === 'knowledge_base' && 'Base Conhecimento'}
+                  {currentPage === 'audit' && 'Auditoria'}
+                  {currentPage === 'users' && 'Usuários'}
+                  {currentPage === 'legacy_equipments' && 'Equipamentos'}
                   {currentPage === 'legacy_service_orders' && 'Ordens de Serviço'}
-                  {currentPage === 'legacy_it_checklist' && 'Checklist Formatação TI'}
-                  {currentPage === 'legacy_reports' && 'Relatórios Operacionais'}
+                  {currentPage === 'legacy_it_checklist' && 'Checklist TI'}
+                  {currentPage === 'legacy_reports' && 'Relatórios'}
                 </span>
               </div>
             </div>
           </div>
 
           {/* Discrete User Identification & Actions */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             {/* Discrete User Identification after login (Requirement 2) */}
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+            <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
               <div
-                className="w-6 h-6 rounded-lg flex items-center justify-center font-bold text-[11px] text-white shrink-0 shadow-xs"
+                className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg flex items-center justify-center font-bold text-[10px] sm:text-[11px] text-white shrink-0 shadow-xs"
                 style={{ backgroundColor: user.avatarCor || (user.perfil === 'ADMIN' ? '#2563EB' : '#10B981') }}
               >
                 {user.nome.charAt(0)}
               </div>
-              <div className="flex items-baseline gap-1.5 min-w-0">
-                <span className="font-semibold text-slate-800 truncate max-w-[140px] sm:max-w-none">{user.nome}</span>
-                <span className="text-slate-400 text-[10px]">—</span>
-                <span className="text-amber-800 font-bold text-[11px] shrink-0">{getUserDisplayRole(user)}</span>
+              <div className="flex items-baseline gap-1 min-w-0">
+                <span className="font-semibold text-slate-800 truncate max-w-[70px] sm:max-w-[140px] text-xs">
+                  {user.nome.split(' ')[0]}
+                </span>
+                <span className="text-slate-400 text-[10px] hidden sm:inline">—</span>
+                <span className="text-amber-800 font-bold text-[11px] shrink-0 hidden sm:inline">
+                  {getUserDisplayRole(user)}
+                </span>
               </div>
             </div>
 
@@ -235,7 +243,7 @@ const MainApp: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsSyncModalOpen(true)}
-              className="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer flex items-center gap-1 text-xs font-semibold"
+              className="p-1.5 sm:p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer hidden sm:flex items-center gap-1 text-xs font-semibold"
               title="Sincronização Nuvem"
             >
               <Cloud className="w-4 h-4 text-blue-600" />
@@ -246,7 +254,7 @@ const MainApp: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsSettingsOpen(true)}
-              className="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
+              className="p-1.5 sm:p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer hidden sm:flex"
               title="Parâmetros Técnicos"
             >
               <Sliders className="w-4 h-4" />
@@ -256,7 +264,7 @@ const MainApp: React.FC = () => {
             <button
               type="button"
               onClick={logout}
-              className="p-2 rounded-xl text-rose-600 hover:text-rose-800 hover:bg-rose-50 transition-colors cursor-pointer flex items-center gap-1 text-xs font-bold"
+              className="p-1.5 sm:p-2 rounded-xl text-rose-600 hover:text-rose-800 hover:bg-rose-50 transition-colors cursor-pointer flex items-center gap-1 text-xs font-bold"
               title="Sair do sistema"
             >
               <LogOut className="w-4 h-4" />
@@ -274,7 +282,7 @@ const MainApp: React.FC = () => {
         )}
 
         {/* Main Content Area */}
-        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 pb-24 lg:pb-8 min-w-0 max-w-full overflow-x-hidden">
           {/* Section 1: Dashboard */}
           {currentPage === 'dashboard' && (
             <DashboardView
@@ -384,6 +392,83 @@ const MainApp: React.FC = () => {
         userRole={user.perfil === 'ADMIN' ? 'GESTOR' : 'TECNICO'}
       />
       <MultiDeviceModal isOpen={isMultiDeviceOpen} onClose={() => setIsMultiDeviceOpen(false)} />
+
+      {/* Mobile Bottom Navigation Bar (Dock para celulares / telas touch) */}
+      <nav className="mobile-bottom-nav lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 px-1 py-1 flex items-center justify-between shadow-[0_-4px_20px_rgba(0,0,0,0.06)] pb-safe w-full max-w-full">
+        <button
+          type="button"
+          onClick={() => setCurrentPage('dashboard')}
+          className={`flex-1 flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all cursor-pointer min-h-[48px] ${
+            currentPage === 'dashboard'
+              ? 'text-blue-600 font-bold'
+              : 'text-slate-500 hover:text-slate-900 active:bg-slate-100'
+          }`}
+        >
+          <LayoutDashboard className={`w-5 h-5 ${currentPage === 'dashboard' ? 'stroke-[2.5]' : 'stroke-2'}`} />
+          <span className="text-[10px] mt-0.5 font-medium leading-none">Início</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setCurrentPage('branches')}
+          className={`flex-1 flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all cursor-pointer min-h-[48px] ${
+            currentPage === 'branches'
+              ? 'text-blue-600 font-bold'
+              : 'text-slate-500 hover:text-slate-900 active:bg-slate-100'
+          }`}
+        >
+          <Building2 className={`w-5 h-5 ${currentPage === 'branches' ? 'stroke-[2.5]' : 'stroke-2'}`} />
+          <span className="text-[10px] mt-0.5 font-medium leading-none">Lojas</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setCurrentPage('legacy_service_orders')}
+          className={`flex-1 flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all cursor-pointer min-h-[48px] ${
+            currentPage === 'legacy_service_orders'
+              ? 'text-blue-600 font-bold'
+              : 'text-slate-500 hover:text-slate-900 active:bg-slate-100'
+          }`}
+        >
+          <Wrench className={`w-5 h-5 ${currentPage === 'legacy_service_orders' ? 'stroke-[2.5]' : 'stroke-2'}`} />
+          <span className="text-[10px] mt-0.5 font-medium leading-none">OS</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setCurrentPage('checklists')}
+          className={`flex-1 flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all cursor-pointer min-h-[48px] ${
+            currentPage === 'checklists'
+              ? 'text-blue-600 font-bold'
+              : 'text-slate-500 hover:text-slate-900 active:bg-slate-100'
+          }`}
+        >
+          <ClipboardCheck className={`w-5 h-5 ${currentPage === 'checklists' ? 'stroke-[2.5]' : 'stroke-2'}`} />
+          <span className="text-[10px] mt-0.5 font-medium leading-none">Checklist</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setCurrentPage('knowledge_base')}
+          className={`flex-1 flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all cursor-pointer min-h-[48px] ${
+            currentPage === 'knowledge_base'
+              ? 'text-blue-600 font-bold'
+              : 'text-slate-500 hover:text-slate-900 active:bg-slate-100'
+          }`}
+        >
+          <BookOpen className={`w-5 h-5 ${currentPage === 'knowledge_base' ? 'stroke-[2.5]' : 'stroke-2'}`} />
+          <span className="text-[10px] mt-0.5 font-medium leading-none">Base</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setIsMobileMenuOpen(true)}
+          className="flex-1 flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl text-slate-500 hover:text-slate-900 active:bg-slate-100 transition-all cursor-pointer min-h-[48px]"
+        >
+          <Menu className="w-5 h-5 stroke-2" />
+          <span className="text-[10px] mt-0.5 font-medium leading-none">Menu</span>
+        </button>
+      </nav>
     </div>
   );
 };

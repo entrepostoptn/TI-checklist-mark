@@ -730,14 +730,14 @@ export const BranchChecklistsView: React.FC<BranchChecklistsViewProps> = ({
                       </div>
 
                       {/* Status Selector Buttons (Requirement 3: Pendente, Em andamento, Conforme, Não conforme, Não aplicável) */}
-                      <div className="flex items-center gap-1 flex-wrap shrink-0">
+                      <div className="flex items-center gap-1.5 flex-wrap w-full sm:w-auto shrink-0 pt-1 sm:pt-0">
                         <button
                           type="button"
                           onClick={() => handleItemStatusChange(item.id, 'PENDENTE')}
-                          className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                          className={`flex-1 sm:flex-initial min-h-[36px] px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                             item.status === 'PENDENTE'
-                              ? 'bg-amber-500 text-slate-950 ring-2 ring-amber-300'
-                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                              ? 'bg-amber-500 text-slate-950 ring-2 ring-amber-300 shadow-xs'
+                              : 'bg-slate-100 text-slate-600 active:bg-slate-200'
                           }`}
                         >
                           Pendente
@@ -746,22 +746,22 @@ export const BranchChecklistsView: React.FC<BranchChecklistsViewProps> = ({
                         <button
                           type="button"
                           onClick={() => handleItemStatusChange(item.id, 'EM_ANDAMENTO')}
-                          className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                          className={`flex-1 sm:flex-initial min-h-[36px] px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                             item.status === 'EM_ANDAMENTO'
-                              ? 'bg-blue-600 text-white ring-2 ring-blue-300'
-                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                              ? 'bg-blue-600 text-white ring-2 ring-blue-300 shadow-xs'
+                              : 'bg-slate-100 text-slate-600 active:bg-slate-200'
                           }`}
                         >
-                          Em Andamento
+                          Andamento
                         </button>
 
                         <button
                           type="button"
                           onClick={() => handleItemStatusChange(item.id, 'CONFORME')}
-                          className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                          className={`flex-1 sm:flex-initial min-h-[36px] px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                             item.status === 'CONFORME'
-                              ? 'bg-emerald-600 text-white ring-2 ring-emerald-300'
-                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                              ? 'bg-emerald-600 text-white ring-2 ring-emerald-300 shadow-xs'
+                              : 'bg-slate-100 text-slate-600 active:bg-slate-200'
                           }`}
                         >
                           ✓ Conforme
@@ -770,10 +770,10 @@ export const BranchChecklistsView: React.FC<BranchChecklistsViewProps> = ({
                         <button
                           type="button"
                           onClick={() => handleItemStatusChange(item.id, 'NAO_CONFORME')}
-                          className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                          className={`flex-1 sm:flex-initial min-h-[36px] px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                             item.status === 'NAO_CONFORME'
-                              ? 'bg-rose-600 text-white ring-2 ring-rose-300'
-                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                              ? 'bg-rose-600 text-white ring-2 ring-rose-300 shadow-xs'
+                              : 'bg-slate-100 text-slate-600 active:bg-slate-200'
                           }`}
                         >
                           ✗ Não Conforme
@@ -782,10 +782,10 @@ export const BranchChecklistsView: React.FC<BranchChecklistsViewProps> = ({
                         <button
                           type="button"
                           onClick={() => handleItemStatusChange(item.id, 'NAO_APLICAVEL')}
-                          className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                          className={`min-h-[36px] px-2 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                             item.status === 'NAO_APLICAVEL'
                               ? 'bg-slate-700 text-white ring-2 ring-slate-400'
-                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                              : 'bg-slate-100 text-slate-600 active:bg-slate-200'
                           }`}
                         >
                           N/A
@@ -879,21 +879,21 @@ export const BranchChecklistsView: React.FC<BranchChecklistsViewProps> = ({
             )}
 
             {/* Footer Buttons: Salvar sem concluir, Finalizar */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-200 shrink-0">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-3 border-t border-slate-200 shrink-0">
               <button
                 type="button"
                 onClick={() => setExecutingChecklist(null)}
-                className="w-full sm:w-auto px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer"
+                className="w-full sm:w-auto px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer min-h-[42px] order-3 sm:order-1"
               >
                 Fechar sem Salvar
               </button>
 
-              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto order-1 sm:order-2">
                 {/* Salvar sem concluir (Retomar depois) */}
                 <button
                   type="button"
                   onClick={handleSaveDraft}
-                  className="px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 font-bold rounded-xl text-xs flex items-center gap-1.5 cursor-pointer"
+                  className="w-full sm:w-auto px-4 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[42px]"
                 >
                   <Save className="w-4 h-4" />
                   <span>Salvar em Andamento</span>
@@ -903,7 +903,7 @@ export const BranchChecklistsView: React.FC<BranchChecklistsViewProps> = ({
                 <button
                   type="button"
                   onClick={handleComplete}
-                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-md shadow-emerald-600/20 flex items-center gap-1.5 cursor-pointer"
+                  className="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-md shadow-emerald-600/20 flex items-center justify-center gap-1.5 cursor-pointer min-h-[42px]"
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   <span>Finalizar Checklist</span>

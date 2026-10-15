@@ -536,7 +536,7 @@ export const ReportsManager: React.FC = () => {
       </div>
 
       {/* Navigation Tabs (5 Reports) */}
-      <div className="bg-slate-200/70 p-1 rounded-2xl flex items-center gap-1 overflow-x-auto print:hidden text-xs font-bold">
+      <div className="bg-slate-200/70 p-1.5 rounded-2xl flex items-center gap-1.5 overflow-x-auto no-scrollbar print:hidden text-xs font-bold w-full max-w-full">
         <button
           type="button"
           onClick={() => {
