@@ -16,6 +16,7 @@ import {
   Monitor,
   FileText,
   X,
+  BookOpen,
 } from 'lucide-react';
 
 export type SystemPage =
@@ -23,6 +24,7 @@ export type SystemPage =
   | 'branches'
   | 'checklists'
   | 'templates'
+  | 'knowledge_base'
   | 'audit'
   | 'users'
   | 'settings'
@@ -59,9 +61,9 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
     },
     {
       id: 'branches' as SystemPage,
-      label: 'Matriz e Filiais',
+      label: 'Matrizes e Filiais',
       icon: Building2,
-      badge: '44 Unid.',
+      badge: null,
     },
     {
       id: 'checklists' as SystemPage,
@@ -73,6 +75,12 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
       id: 'templates' as SystemPage,
       label: 'Modelos de Checklist',
       icon: FileSpreadsheet,
+      badge: null,
+    },
+    {
+      id: 'knowledge_base' as SystemPage,
+      label: 'Base de Conhecimento',
+      icon: BookOpen,
       badge: null,
     },
     {
@@ -140,15 +148,15 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
         {/* Header / Brand */}
         <div className="p-4 sm:p-5 border-b border-slate-800/80 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-600 to-amber-500 text-slate-950 flex items-center justify-center font-black text-xl shadow-md shadow-amber-500/20 ring-2 ring-amber-500/30 shrink-0">
-              PN
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-blue-500 text-white flex items-center justify-center font-black text-xl shadow-md shadow-blue-500/20 ring-2 ring-blue-500/30 shrink-0">
+              MS
             </div>
             <div>
               <div className="font-extrabold text-sm tracking-wide text-white uppercase flex items-center gap-1.5">
-                <span>PATA NEGRA</span>
+                <span>MARK SECURITY</span>
               </div>
-              <div className="text-[11px] text-amber-400 font-medium">
-                Matriz & Filiais
+              <div className="text-[11px] text-blue-400 font-medium">
+                Suporte & Operações
               </div>
             </div>
           </div>

@@ -33,7 +33,7 @@ interface ClientContextType {
     storesList: Array<Omit<Store, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }>
   ) => { success: boolean; created: number; updated: number };
 
-  // Helper Pata Negra Seeder
+  // Helper Mark Security Seeder
   seedPataNegraData: () => { success: boolean; message: string };
 
   // Consultas e Filtros
@@ -58,8 +58,8 @@ const STORAGE_KEY_STORES = 'it_stores_v2';
 export const PATA_NEGRA_CLIENT: Client = {
   id: 'cli_pata_negra',
   codigo: 'PTN-01',
-  razaoSocial: 'Entreposto Pata Negra Comércio de Alimentos Ltda',
-  nomeFantasia: 'Pata Negra',
+  razaoSocial: 'Entreposto Mark Security Comércio de Alimentos Ltda',
+  nomeFantasia: 'Mark Security',
   cnpj: '45.123.890/0001-44',
   telefone: '(11) 4198-8800',
   email: 'entrepostoptn@gmail.com',
@@ -74,7 +74,7 @@ export const PATA_NEGRA_STORES: Store[] = [
   {
     id: 'store_ptn_matriz',
     clienteId: 'cli_pata_negra',
-    clienteNome: 'Pata Negra',
+    clienteNome: 'Mark Security',
     nome: 'Matriz / Loja 01 — Alphaville Barueri',
     codigoLoja: '01',
     cnpj: '45.123.890/0001-44',
@@ -93,7 +93,7 @@ export const PATA_NEGRA_STORES: Store[] = [
   {
     id: 'store_ptn_02',
     clienteId: 'cli_pata_negra',
-    clienteNome: 'Pata Negra',
+    clienteNome: 'Mark Security',
     nome: 'Loja 02 — Osasco (Vila Yara)',
     codigoLoja: '02',
     cnpj: '45.123.890/0002-25',
@@ -112,7 +112,7 @@ export const PATA_NEGRA_STORES: Store[] = [
   {
     id: 'store_ptn_03',
     clienteId: 'cli_pata_negra',
-    clienteNome: 'Pata Negra',
+    clienteNome: 'Mark Security',
     nome: 'Loja 03 — Carapicuíba',
     codigoLoja: '03',
     cnpj: '45.123.890/0003-06',
@@ -131,7 +131,7 @@ export const PATA_NEGRA_STORES: Store[] = [
   {
     id: 'store_ptn_04',
     clienteId: 'cli_pata_negra',
-    clienteNome: 'Pata Negra',
+    clienteNome: 'Mark Security',
     nome: 'Loja 04 — Itapevi',
     codigoLoja: '04',
     cnpj: '45.123.890/0004-97',
@@ -150,7 +150,7 @@ export const PATA_NEGRA_STORES: Store[] = [
   {
     id: 'store_ptn_05',
     clienteId: 'cli_pata_negra',
-    clienteNome: 'Pata Negra',
+    clienteNome: 'Mark Security',
     nome: 'Loja 05 — Santana de Parnaíba / Residencial',
     codigoLoja: '05',
     cnpj: '45.123.890/0005-78',
@@ -169,7 +169,7 @@ export const PATA_NEGRA_STORES: Store[] = [
   {
     id: 'store_ptn_cd',
     clienteId: 'cli_pata_negra',
-    clienteNome: 'Pata Negra',
+    clienteNome: 'Mark Security',
     nome: 'Centro de Distribuição & Entreposto Central',
     codigoLoja: 'CD',
     cnpj: '45.123.890/0006-59',
@@ -370,8 +370,8 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         const hasPata = syncedClients.some(
           (c) =>
             c.id === PATA_NEGRA_CLIENT.id ||
-            c.nomeFantasia?.toLowerCase().includes('pata negra') ||
-            c.razaoSocial.toLowerCase().includes('pata negra')
+            c.nomeFantasia?.toLowerCase().includes('mark security') ||
+            c.razaoSocial.toLowerCase().includes('mark security')
         );
         let finalClients = syncedClients;
         if (!hasPata) {
@@ -584,7 +584,7 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     [updateClient]
   );
 
-  // Helper to ensure Pata Negra client and its branches are guaranteed in DB and local state
+  // Helper to ensure Mark Security client and its branches are guaranteed in DB and local state
   const seedPataNegraData = useCallback(() => {
     let clientAdded = false;
     let storesAddedCount = 0;
@@ -593,8 +593,8 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const exists = prevClients.some(
         (c) =>
           c.id === PATA_NEGRA_CLIENT.id ||
-          (c.nomeFantasia && c.nomeFantasia.toLowerCase().includes('pata negra')) ||
-          c.razaoSocial.toLowerCase().includes('pata negra')
+          (c.nomeFantasia && c.nomeFantasia.toLowerCase().includes('mark security')) ||
+          c.razaoSocial.toLowerCase().includes('mark security')
       );
       if (!exists) {
         clientAdded = true;
@@ -617,7 +617,7 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     return {
       success: true,
-      message: `Cliente Pata Negra e suas ${PATA_NEGRA_STORES.length} filiais sincronizadas e ativas!`,
+      message: `Cliente Mark Security e suas ${PATA_NEGRA_STORES.length} filiais sincronizadas e ativas!`,
     };
   }, []);
 
@@ -866,7 +866,7 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, [clients, stores]);
 
   useEffect(() => {
-    // Automatically guarantee Pata Negra client and its branches are seeded
+    // Automatically guarantee Mark Security client and its branches are seeded
     seedPataNegraData();
   }, [seedPataNegraData]);
 

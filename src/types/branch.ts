@@ -19,6 +19,8 @@ export interface BranchUnit {
   observacoes?: string;            // Observações gerais
   pendenteConferencia?: boolean;   // Sinalização de dados ausentes/ilegíveis para conferência manual
   camposIlegiveis?: string[];      // Lista de campos com pendência de validação
+  matrizVinculadaId?: string;      // ID da Matriz à qual a filial está vinculada
+  matrizVinculadaNome?: string;    // Nome da Matriz vinculada
   criadoEm: string;
   atualizadoEm: string;
 }

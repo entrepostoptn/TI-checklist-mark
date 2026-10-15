@@ -31,6 +31,7 @@ interface ServiceOrderModalProps {
   onClose: () => void;
   orderToEdit?: ServiceOrder | null;
   initialEquipment?: Equipment | null;
+  initialStoreName?: string;
   onOpenChecklistForMachine?: (machineData: { identificacao: string; loja: string; tecnico: string; tipo: MachineType }) => void;
 }
 
@@ -39,6 +40,7 @@ export const ServiceOrderModal: React.FC<ServiceOrderModalProps> = ({
   onClose,
   orderToEdit,
   initialEquipment,
+  initialStoreName,
   onOpenChecklistForMachine,
 }) => {
   const { addOrder, updateOrder } = useServiceOrders();
@@ -162,8 +164,8 @@ export const ServiceOrderModal: React.FC<ServiceOrderModalProps> = ({
       setPatrimonio('');
       setNumeroSerie('');
       setTipo('PDV');
-      setLojaOrigem('');
-      setLojaDestino('');
+      setLojaOrigem(initialStoreName || '');
+      setLojaDestino(initialStoreName || '');
       setTecnicoResponsavel('Carlos Silva');
       setResponsavelEntrega('');
       setResponsavelRetirada('');

@@ -149,7 +149,7 @@ export const ClientManager: React.FC<ClientManagerProps> = ({
     return stores.find((s) => s.id === selectedStoreId) || null;
   }, [stores, selectedStoreId]);
 
-  // Pata Negra Client Memo
+  // Mark Security Client Memo
   const pataNegraClient = useMemo(() => {
     return clients.find(
       (c) =>
@@ -369,16 +369,16 @@ export const ClientManager: React.FC<ClientManagerProps> = ({
                 const ptn = clients.find(
                   (c) =>
                     c.id === 'cli_pata_negra' ||
-                    (c.nomeFantasia && c.nomeFantasia.toLowerCase().includes('pata negra')) ||
-                    c.razaoSocial.toLowerCase().includes('pata negra')
+                    (c.nomeFantasia && c.nomeFantasia.toLowerCase().includes('mark security')) ||
+                    c.razaoSocial.toLowerCase().includes('mark security')
                 );
                 if (ptn) setExpandedClientId(ptn.id);
               }}
               className="flex items-center gap-2 px-3.5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs sm:text-sm rounded-xl shadow-md transition-all cursor-pointer"
-              title="Garantir e abrir cadastro do Cliente Pata Negra e suas 6 filiais"
+              title="Garantir e abrir cadastro do Cliente Mark Security e suas 6 filiais"
             >
               <Sparkles className="w-4 h-4 text-amber-200" />
-              <span>Cliente Pata Negra</span>
+              <span>Cliente Mark Security</span>
             </button>
             <button
               type="button"
@@ -1171,7 +1171,7 @@ export const ClientManager: React.FC<ClientManagerProps> = ({
         />
       )}
 
-      {/* MODAL 4: Matriz Especial de Filiais Pata Negra (1 a 43) */}
+      {/* MODAL 4: Matriz Especial de Filiais Mark Security (1 a 43) */}
       {isPataNegraMatrixOpen && (
         <PataNegraMatrixModal
           isOpen={isPataNegraMatrixOpen}

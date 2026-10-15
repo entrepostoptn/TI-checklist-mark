@@ -18,6 +18,7 @@ import { BranchChecklistsView } from './components/BranchChecklistsView';
 import { ChecklistTemplatesView } from './components/ChecklistTemplatesView';
 import { AuditHistoryView } from './components/AuditHistoryView';
 import { UserManagerView } from './components/UserManagerView';
+import { KnowledgeBaseView } from './components/KnowledgeBaseView';
 
 // Existing Matrix TI Components (Preserving full legacy functionality)
 import { EquipmentManager } from './components/EquipmentManager';
@@ -79,19 +80,15 @@ const MainApp: React.FC = () => {
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [isMultiDeviceOpen, setIsMultiDeviceOpen] = useState(false);
 
-  // Direct OS Modal from Equipment
+  // Direct OS Modal from Equipment or Branch
   const [isDirectOsModalOpen, setIsDirectOsModalOpen] = useState(false);
   const [directOsEquipment, setDirectOsEquipment] = useState<Equipment | null>(null);
+  const [directOsStoreName, setDirectOsStoreName] = useState<string | null>(null);
 
   // If user is not authenticated, show professional Login Screen (Requirement 6)
   if (!user) {
     return <LoginScreen />;
   }
-
-  // Quick User Switcher for demonstration & role test
-  const handleSwitchUser = async (targetUsername: string, pass: string) => {
-    await login(targetUsername, pass);
-  };
 
   // Callback to start TI machine checklist
   const handleStartChecklistForMachine = (machineData: {
@@ -186,14 +183,15 @@ const MainApp: React.FC = () => {
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-extrabold text-sm sm:text-base text-slate-900 tracking-tight uppercase">
-                  Pata Negra
+                  Mark Security
                 </span>
                 <span className="text-slate-300">/</span>
-                <span className="text-xs sm:text-sm font-bold text-amber-700">
+                <span className="text-xs sm:text-sm font-bold text-blue-700">
                   {currentPage === 'dashboard' && 'Dashboard Operacional'}
-                  {currentPage === 'branches' && 'Matriz e Filiais'}
+                  {currentPage === 'branches' && 'Matrizes e Filiais'}
                   {currentPage === 'checklists' && 'Checklists das Unidades'}
                   {currentPage === 'templates' && 'Modelos de Checklist'}
+                  {currentPage === 'knowledge_base' && 'Base de Conhecimento'}
                   {currentPage === 'audit' && 'Histórico de Modificações'}
                   {currentPage === 'users' && 'Gerenciamento de Usuários'}
                   {currentPage === 'legacy_equipments' && 'Equipamentos & TI'}
@@ -286,11 +284,15 @@ const MainApp: React.FC = () => {
             />
           )}
 
-          {/* Section 2: Matriz e Filiais (Requirement 1 & 2) */}
+          {/* Section 2: Matrizes e Filiais (Hierarquia: Matrizes -> Filiais -> Atendimentos) */}
           {currentPage === 'branches' && (
             <BranchesManager
               onOpenChecklistForBranch={handleOpenChecklistForBranch}
               onOpenAuditForBranch={() => setCurrentPage('audit')}
+              onOpenServiceOrderForBranch={(branch) => {
+                setDirectOsStoreName(branch.nomeFantasia);
+                setIsDirectOsModalOpen(true);
+              }}
             />
           )}
 
@@ -312,8 +314,23 @@ const MainApp: React.FC = () => {
           {/* Section 5: Histórico de Modificações e Auditoria (Requirement 5) */}
           {currentPage === 'audit' && <AuditHistoryView />}
 
-          {/* Section 6: Gerenciamento de Usuários (Requirement 7 & 8) */}
-          {currentPage === 'users' && <UserManagerView />}
+          {/* Section 6: Base de Conhecimento Operacional */}
+          {currentPage === 'knowledge_base' && <KnowledgeBaseView />}
+
+          {/* Section 7: Gerenciamento de Usuários (Acesso estrito para administradores) */}
+          {currentPage === 'users' && (
+            permissions.podeGerenciarUsuarios ? (
+              <UserManagerView />
+            ) : (
+              <div className="p-8 text-center bg-white rounded-2xl border border-slate-200">
+                <Shield className="w-12 h-12 text-rose-500 mx-auto mb-3" />
+                <h2 className="text-base font-bold text-slate-800">Acesso Restrito ao Administrador</h2>
+                <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+                  Apenas usuários com perfil administrativo têm permissão para acessar o gerenciamento de contas e redefinição de senhas.
+                </p>
+              </div>
+            )
+          )}
 
           {/* Legacy Module: Equipamentos & TI */}
           {currentPage === 'legacy_equipments' && (
@@ -342,15 +359,17 @@ const MainApp: React.FC = () => {
         </main>
       </div>
 
-      {/* Direct OS Modal from Equipment */}
+      {/* Direct OS Modal from Equipment or Branch */}
       {isDirectOsModalOpen && (
         <ServiceOrderModal
           isOpen={isDirectOsModalOpen}
           onClose={() => {
             setIsDirectOsModalOpen(false);
             setDirectOsEquipment(null);
+            setDirectOsStoreName(null);
           }}
           initialEquipment={directOsEquipment}
+          initialStoreName={directOsStoreName || undefined}
           onOpenChecklistForMachine={handleStartChecklistForMachine}
         />
       )}

@@ -70,7 +70,7 @@ export const PATA_NEGRA_EQUIPMENTS: Equipment[] = [
     marca: 'Dell',
     modelo: 'OptiPlex 3070 Micro',
     clienteId: 'cli_pata_negra',
-    clienteNome: 'Pata Negra',
+    clienteNome: 'Mark Security',
     lojaId: 'store_ptn_matriz',
     lojaNome: 'Matriz / Loja 01 — Alphaville Barueri',
     lojaOrigem: 'Matriz / Loja 01 — Alphaville Barueri',
@@ -101,7 +101,7 @@ export const PATA_NEGRA_EQUIPMENTS: Equipment[] = [
     marca: 'Dell',
     modelo: 'OptiPlex 3070 Micro',
     clienteId: 'cli_pata_negra',
-    clienteNome: 'Pata Negra',
+    clienteNome: 'Mark Security',
     lojaId: 'store_ptn_matriz',
     lojaNome: 'Matriz / Loja 01 — Alphaville Barueri',
     lojaOrigem: 'Matriz / Loja 01 — Alphaville Barueri',
@@ -132,7 +132,7 @@ export const PATA_NEGRA_EQUIPMENTS: Equipment[] = [
     marca: 'Toledo',
     modelo: 'Prix 5 Plus',
     clienteId: 'cli_pata_negra',
-    clienteNome: 'Pata Negra',
+    clienteNome: 'Mark Security',
     lojaId: 'store_ptn_matriz',
     lojaNome: 'Matriz / Loja 01 — Alphaville Barueri',
     lojaOrigem: 'Matriz / Loja 01 — Alphaville Barueri',
@@ -157,7 +157,7 @@ export const PATA_NEGRA_EQUIPMENTS: Equipment[] = [
     marca: 'Epson',
     modelo: 'TM-T20X',
     clienteId: 'cli_pata_negra',
-    clienteNome: 'Pata Negra',
+    clienteNome: 'Mark Security',
     lojaId: 'store_ptn_matriz',
     lojaNome: 'Matriz / Loja 01 — Alphaville Barueri',
     lojaOrigem: 'Matriz / Loja 01 — Alphaville Barueri',
@@ -181,7 +181,7 @@ export const PATA_NEGRA_EQUIPMENTS: Equipment[] = [
     marca: 'HP',
     modelo: 'ProDesk 400 G5',
     clienteId: 'cli_pata_negra',
-    clienteNome: 'Pata Negra',
+    clienteNome: 'Mark Security',
     lojaId: 'store_ptn_02',
     lojaNome: 'Loja 02 — Osasco (Vila Yara)',
     lojaOrigem: 'Loja 02 — Osasco (Vila Yara)',
@@ -212,7 +212,7 @@ export const PATA_NEGRA_EQUIPMENTS: Equipment[] = [
     marca: 'Dell',
     modelo: 'PowerEdge T140',
     clienteId: 'cli_pata_negra',
-    clienteNome: 'Pata Negra',
+    clienteNome: 'Mark Security',
     lojaId: 'store_ptn_cd',
     lojaNome: 'Centro de Distribuição & Entreposto Central',
     lojaOrigem: 'Centro de Distribuição & Entreposto Central',
@@ -738,7 +738,7 @@ export const EquipmentProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, []);
 
   useEffect(() => {
-    // Automatically guarantee Pata Negra equipments exist
+    // Automatically guarantee Mark Security equipments exist
     setEquipments((prev) => {
       const existingIds = new Set(prev.map((e) => e.id));
       const missing = PATA_NEGRA_EQUIPMENTS.filter((eq) => !existingIds.has(eq.id));

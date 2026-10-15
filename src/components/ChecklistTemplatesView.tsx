@@ -185,7 +185,7 @@ export const ChecklistTemplatesView: React.FC<ChecklistTemplatesViewProps> = ({
             </span>
           </div>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Padronização operacional para aplicação na Matriz e nas 43 Filiais Pata Negra. Cada preenchimento preserva a versão snapshot original.
+            Padronização operacional para aplicação na Matriz e nas filiais Mark Security. Cada preenchimento preserva a versão snapshot original.
           </p>
         </div>
 

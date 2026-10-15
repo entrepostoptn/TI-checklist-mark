@@ -49,7 +49,7 @@ export const PataNegraMatrixModal: React.FC<PataNegraMatrixModalProps> = ({
   const [isBatchPasteOpen, setIsBatchPasteOpen] = useState(false);
   const [batchText, setBatchText] = useState('');
 
-  // Filiais vinculadas ao cliente Pata Negra
+  // Filiais vinculadas ao cliente Mark Security
   const pataStores = useMemo(() => {
     if (!pataNegraClient) return [];
     return stores
@@ -133,7 +133,7 @@ export const PataNegraMatrixModal: React.FC<PataNegraMatrixModalProps> = ({
           clienteId: pataNegraClient.id,
           clienteNome: pataNegraClient.nomeFantasia || pataNegraClient.razaoSocial,
           codigoLoja: padCode,
-          nome: nomeRaw || `Loja ${padCode} — Pata Negra`,
+          nome: nomeRaw || `Loja ${padCode} — Mark Security`,
           endereco: enderecoRaw || 'Endereço a confirmar',
           cep: cepRaw || undefined,
           telefone: telRaw || undefined,
@@ -170,10 +170,10 @@ export const PataNegraMatrixModal: React.FC<PataNegraMatrixModalProps> = ({
                 <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
                   PTN-01 • Lojas 1 a 43
                 </span>
-                <span className="text-xs text-slate-300">Grupo Pata Negra</span>
+                <span className="text-xs text-slate-300">Grupo Mark Security</span>
               </div>
               <h2 className="text-base sm:text-lg font-black text-white mt-0.5">
-                Matriz Cadastral de Filiais — Pata Negra
+                Matriz Cadastral de Filiais — Mark Security
               </h2>
             </div>
           </div>
@@ -485,7 +485,7 @@ export const PataNegraMatrixModal: React.FC<PataNegraMatrixModalProps> = ({
         {/* Modal Footer */}
         <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="text-slate-500">
-            Regra Pata Negra: numeração 1 a 43 preservada; lojas com bolinha vermelha mantidas como inativas.
+            Regra Mark Security: numeração 1 a 43 preservada; lojas com bolinha vermelha mantidas como inativas.
           </div>
           <button
             type="button"

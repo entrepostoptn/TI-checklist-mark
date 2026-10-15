@@ -302,7 +302,7 @@ export const BranchChecklistsView: React.FC<BranchChecklistsViewProps> = ({
             </span>
           </div>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Preenchimento de vistorias técnicas, aberturas de loja e conformidades da rede Pata Negra.
+            Preenchimento de vistorias técnicas, aberturas de loja e conformidades da rede Mark Security.
           </p>
         </div>
 

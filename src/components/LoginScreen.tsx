@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Lock, User, Eye, EyeOff, AlertCircle, ArrowRight, Building2 } from 'lucide-react';
+import { Shield, Lock, User, Eye, EyeOff, AlertCircle, ArrowRight } from 'lucide-react';
 
 interface LoginScreenProps {
   onSuccess?: () => void;
@@ -40,14 +40,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
       <div className="w-full max-w-sm">
         {/* Brand Header */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-600 to-amber-500 text-slate-950 shadow-lg shadow-amber-500/20 mb-3 ring-2 ring-amber-500/30">
-            <Building2 className="w-8 h-8" />
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/20 mb-3 ring-2 ring-blue-500/30">
+            <Shield className="w-7 h-7" />
           </div>
           <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white uppercase">
-            Pata Negra
+            Mark Security
           </h1>
-          <p className="text-xs font-semibold text-slate-400 mt-0.5">
-            Sistema Integrado de Gestão
+          <p className="text-xs font-medium text-slate-400 mt-0.5">
+            Suporte Técnico, Operações & Base de Conhecimento
           </p>
         </div>
 
@@ -132,8 +132,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
         </div>
 
         {/* Discrete Footer */}
-        <div className="text-center mt-6 text-slate-400 text-[11px]">
-          Entreposto Pata Negra • Sistema de Gestão Corporativa
+        <div className="text-center mt-6 text-slate-500 text-[11px]">
+          Mark Security • Plataforma Corporativa de Suporte Técnico e Operações
         </div>
       </div>
     </div>
