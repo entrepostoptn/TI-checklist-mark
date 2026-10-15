@@ -3,6 +3,7 @@ import { BranchUnit, BranchFilterOptions, BranchStatus } from '../types/branch';
 import { INITIAL_PATA_NEGRA_BRANCHES, MATRIZ_PATA_NEGRA } from '../constants/initialPataNegraData';
 import { useAudit } from './AuditContext';
 import { useAuth } from './AuthContext';
+import { subscribeToBranches, syncSaveBranch } from '../services/firestoreSync';
 
 interface BranchContextType {
   branches: BranchUnit[];
@@ -63,6 +64,25 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     } catch {}
   }, [branches]);
 
+  // Sincronização em tempo real via Firestore para computador e celular
+  useEffect(() => {
+    try {
+      const unsub = subscribeToBranches(
+        (remote) => {
+          if (remote && remote.length > 0) {
+            setBranches(remote);
+          }
+        },
+        (err) => {
+          console.warn('Sincronização offline para filiais:', err);
+        }
+      );
+      return () => unsub();
+    } catch (e) {
+      console.warn('Erro ao conectar listener Firestore para filiais:', e);
+    }
+  }, []);
+
   // Contadores
   const totalCount = branches.length;
   const activeCount = branches.filter((b) => b.status === 'ativa').length;
@@ -122,6 +142,7 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       };
 
       setBranches((prev) => [...prev, newBranch]);
+      syncSaveBranch(newBranch);
 
       // Registro de auditoria
       addAuditLog({
@@ -166,6 +187,7 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       };
 
       setBranches((prev) => prev.map((b) => (b.id === id ? updatedBranch : b)));
+      syncSaveBranch(updatedBranch);
 
       // Identifica campos modificados para auditoria
       const modifiedFields: string[] = [];
@@ -211,6 +233,7 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       };
 
       setBranches((prev) => prev.map((b) => (b.id === id ? updatedBranch : b)));
+      syncSaveBranch(updatedBranch);
 
       addAuditLog({
         usuarioId: user?.id || 'sistema',

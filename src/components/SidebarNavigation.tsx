@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, getUserDisplayRole } from '../context/AuthContext';
 import {
   LayoutDashboard,
   Building2,
@@ -295,8 +295,8 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
                 <div className="text-xs font-bold text-white truncate">
                   {user?.nome}
                 </div>
-                <div className="text-[10px] font-semibold text-amber-400 uppercase tracking-wider flex items-center gap-1">
-                  <span>{user?.perfil === 'ADMIN' ? 'Administrador' : 'Operacional'}</span>
+                <div className="text-[11px] font-medium text-amber-400 truncate">
+                  {getUserDisplayRole(user || null)}
                 </div>
               </div>
             </div>

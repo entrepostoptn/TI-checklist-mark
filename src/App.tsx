@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider, useAuth, getUserDisplayRole } from './context/AuthContext';
 import { AuditProvider } from './context/AuditContext';
 import { BranchProvider } from './context/BranchContext';
 import { BranchChecklistProvider, useBranchChecklists } from './context/BranchChecklistContext';
@@ -205,35 +205,21 @@ const MainApp: React.FC = () => {
             </div>
           </div>
 
-          {/* Quick Role Switcher & System Status */}
+          {/* Discrete User Identification & Actions */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Quick Demo Switcher between Matheus and Marcos (Requirement 6, 7, 8 test) */}
-            <div className="hidden md:flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 border border-slate-200 text-xs">
-              <span className="text-[10px] font-bold text-slate-400 uppercase px-1.5">Alternar Usuário:</span>
-              <button
-                type="button"
-                onClick={() => handleSwitchUser('matheus', 'Neo981524')}
-                className={`px-2 py-1 rounded-lg font-bold text-[11px] transition-all cursor-pointer ${
-                  user.username === 'matheus'
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-white'
-                }`}
-                title="Logar como Matheus Guarnieri (Admin)"
+            {/* Discrete User Identification after login (Requirement 2) */}
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+              <div
+                className="w-6 h-6 rounded-lg flex items-center justify-center font-bold text-[11px] text-white shrink-0 shadow-xs"
+                style={{ backgroundColor: user.avatarCor || (user.perfil === 'ADMIN' ? '#2563EB' : '#10B981') }}
               >
-                Matheus (Admin)
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSwitchUser('marcos', 'Msecurity@20')}
-                className={`px-2 py-1 rounded-lg font-bold text-[11px] transition-all cursor-pointer ${
-                  user.username === 'marcos'
-                    ? 'bg-emerald-600 text-white shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-white'
-                }`}
-                title="Logar como Marcos Oliveira (Operacional)"
-              >
-                Marcos (Operacional)
-              </button>
+                {user.nome.charAt(0)}
+              </div>
+              <div className="flex items-baseline gap-1.5 min-w-0">
+                <span className="font-semibold text-slate-800 truncate max-w-[140px] sm:max-w-none">{user.nome}</span>
+                <span className="text-slate-400 text-[10px]">—</span>
+                <span className="text-amber-800 font-bold text-[11px] shrink-0">{getUserDisplayRole(user)}</span>
+              </div>
             </div>
 
             {/* Mobile PWA button */}
@@ -296,7 +282,7 @@ const MainApp: React.FC = () => {
             <DashboardView
               onNavigate={setCurrentPage}
               onOpenNewChecklistModal={() => setCurrentPage('checklists')}
-              onOpenNewBranchModal={() => setCurrentPage('branches')}
+              onOpenNewServiceOrderModal={() => setIsDirectOsModalOpen(true)}
             />
           )}
 

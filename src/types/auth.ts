@@ -6,6 +6,7 @@ export interface User {
   nome: string;
   email?: string;
   perfil: UserRole;
+  cargo?: string;
   status: 'ativo' | 'inativo';
   precisaTrocarSenha?: boolean;
   criadoEm: string;

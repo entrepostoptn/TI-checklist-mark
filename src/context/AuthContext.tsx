@@ -21,7 +21,12 @@ const STORAGE_KEY_AUTH_USER = 'ptn_auth_current_user_v2';
 const STORAGE_KEY_USERS_LIST = 'ptn_auth_users_v2';
 const STORAGE_KEY_CREDENTIALS = 'ptn_auth_credentials_store_v2';
 
-// 1. Usuários Iniciais Obrigatórios do Sistema Pata Negra
+export const getUserDisplayRole = (u: User | null): string => {
+  if (!u) return '';
+  if (u.cargo) return u.cargo;
+  return u.perfil === 'ADMIN' ? 'Administrador' : 'Operacional';
+};
+
 // Usuário 1: Matheus Guarnieri | Senha inicial: Neo981524 | Perfil: Administrador
 // Usuário 2: Marcos Oliveira | Senha inicial: Msecurity@20 | Perfil: Usuário operacional
 const INITIAL_USERS: User[] = [
@@ -31,6 +36,7 @@ const INITIAL_USERS: User[] = [
     nome: 'Matheus Guarnieri',
     email: 'matheus.guarnieri@patanegra.com.br',
     perfil: 'ADMIN',
+    cargo: 'Administrador',
     status: 'ativo',
     precisaTrocarSenha: false,
     criadoEm: '2024-01-01T08:00:00Z',
@@ -43,6 +49,7 @@ const INITIAL_USERS: User[] = [
     nome: 'Marcos Oliveira',
     email: 'marcos.oliveira@patanegra.com.br',
     perfil: 'OPERACIONAL',
+    cargo: 'Gestor',
     status: 'ativo',
     precisaTrocarSenha: false,
     criadoEm: '2024-01-01T08:00:00Z',
@@ -71,8 +78,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const saved = localStorage.getItem(STORAGE_KEY_AUTH_USER);
       if (saved) return JSON.parse(saved);
     } catch {}
-    // Padrão: Matheus Guarnieri logado para conveniência e teste imediato da aplicação
-    return INITIAL_USERS[0];
+    // Requer login manual se não houver sessão salva
+    return null;
   });
 
   const [users, setUsers] = useState<User[]>(() => {

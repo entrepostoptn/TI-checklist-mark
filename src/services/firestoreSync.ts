@@ -15,6 +15,7 @@ import { Equipment, MovementRecord, HardwareChangeRecord } from '../types/equipm
 import { ServiceOrder } from '../types/serviceOrder';
 import { SavedChecklistRecord, CompanyConfig } from '../types/checklist';
 import { Client, Store } from '../types/client';
+import { BranchUnit } from '../types/branch';
 
 export enum OperationType {
   CREATE = 'create',
@@ -336,6 +337,45 @@ export async function syncDeleteStore(id: string): Promise<void> {
   const path = `stores/${id}`;
   try {
     await deleteDoc(doc(db, 'stores', id));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+
+export function subscribeToBranches(
+  onData: (branches: BranchUnit[]) => void,
+  onError?: (err: Error) => void
+): Unsubscribe {
+  const path = 'branches';
+  return onSnapshot(
+    collection(db, path),
+    (snapshot) => {
+      const items: BranchUnit[] = [];
+      snapshot.forEach((docSnap) => {
+        items.push({ id: docSnap.id, ...(docSnap.data() as Omit<BranchUnit, 'id'>) });
+      });
+      onData(items);
+    },
+    (error) => {
+      onError?.(error);
+      handleFirestoreError(error, OperationType.GET, path);
+    }
+  );
+}
+
+export async function syncSaveBranch(branch: BranchUnit): Promise<void> {
+  const path = `branches/${branch.id}`;
+  try {
+    await setDoc(doc(db, 'branches', branch.id), branch, { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+export async function syncDeleteBranch(id: string): Promise<void> {
+  const path = `branches/${id}`;
+  try {
+    await deleteDoc(doc(db, 'branches', id));
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, path);
   }
