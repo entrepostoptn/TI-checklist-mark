@@ -19,6 +19,7 @@ import { ChecklistTemplatesView } from './components/ChecklistTemplatesView';
 import { AuditHistoryView } from './components/AuditHistoryView';
 import { UserManagerView } from './components/UserManagerView';
 import { KnowledgeBaseView } from './components/KnowledgeBaseView';
+import { MachinesManager } from './components/MachinesManager';
 
 // Existing Matrix TI Components (Preserving full legacy functionality)
 import { EquipmentManager } from './components/EquipmentManager';
@@ -62,6 +63,7 @@ import {
   ClipboardCheck,
   Wrench,
   BookOpen,
+  Monitor,
 } from 'lucide-react';
 
 const MainApp: React.FC = () => {
@@ -193,6 +195,7 @@ const MainApp: React.FC = () => {
                 <span className="text-[11px] sm:text-sm font-bold text-blue-700 truncate max-w-[110px] sm:max-w-none">
                   {currentPage === 'dashboard' && 'Dashboard'}
                   {currentPage === 'branches' && 'Matrizes & Filiais'}
+                  {currentPage === 'machines' && 'Máquinas & Patrimônio'}
                   {currentPage === 'checklists' && 'Checklists'}
                   {currentPage === 'templates' && 'Modelos'}
                   {currentPage === 'knowledge_base' && 'Base Conhecimento'}
@@ -301,6 +304,15 @@ const MainApp: React.FC = () => {
                 setDirectOsStoreName(branch.nomeFantasia);
                 setIsDirectOsModalOpen(true);
               }}
+              onOpenMachinesForBranch={() => setCurrentPage('machines')}
+            />
+          )}
+
+          {/* Section: Máquinas, Patrimônio e Acesso Remoto (Requisito 14) */}
+          {currentPage === 'machines' && (
+            <MachinesManager
+              onStartChecklistForMachine={handleStartChecklistForMachine}
+              onOpenServiceOrderForMachine={handleOpenServiceOrderForMachine}
             />
           )}
 
@@ -449,15 +461,15 @@ const MainApp: React.FC = () => {
 
         <button
           type="button"
-          onClick={() => setCurrentPage('knowledge_base')}
+          onClick={() => setCurrentPage('machines')}
           className={`flex-1 flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all cursor-pointer min-h-[48px] ${
-            currentPage === 'knowledge_base'
+            currentPage === 'machines'
               ? 'text-blue-600 font-bold'
               : 'text-slate-500 hover:text-slate-900 active:bg-slate-100'
           }`}
         >
-          <BookOpen className={`w-5 h-5 ${currentPage === 'knowledge_base' ? 'stroke-[2.5]' : 'stroke-2'}`} />
-          <span className="text-[10px] mt-0.5 font-medium leading-none">Base</span>
+          <Monitor className={`w-5 h-5 ${currentPage === 'machines' ? 'stroke-[2.5]' : 'stroke-2'}`} />
+          <span className="text-[10px] mt-0.5 font-medium leading-none">Máquinas</span>
         </button>
 
         <button

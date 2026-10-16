@@ -62,6 +62,25 @@ export interface Equipment {
   armazenamentoValor?: number;     // Tamanho do armazenamento (Ex: 240, 500, 1)
   armazenamentoUnidade?: 'GB' | 'TB';// Unidade (GB ou TB)
   tipoArmazenamento?: StorageType; // HD, SSD SATA, SSD NVMe
+  placaMae?: string;               // Placa-mãe instalada
+  ramModulos?: string;             // Módulos e tipo de RAM (Ex: 1x 8GB DDR4 2666MHz)
+  perifericos?: string;            // Outros periféricos e componentes relevantes
+  
+  // Requisito 14: Identificação Patrimonial Completa & Hierarquia de Lojas
+  nomeWindows?: string;            // Nome do computador no Windows / Hostname de rede
+  filialId?: string;               // ID da filial
+  filialNome?: string;             // Nome da filial (Ex: Filial Centro, Filial Norte)
+  setor?: string;                  // Setor ou departamento (Ex: Frente de Caixa, Administrativo, Açougue)
+  numeroCaixa?: string;            // Número do caixa (Ex: Caixa 01, Caixa 02)
+  dataAquisicao?: string;          // Data de aquisição (YYYY-MM-DD)
+  
+  // Requisito 14: Central de Acesso Remoto AnyDesk / TeamViewer
+  anydeskId?: string;              // ID AnyDesk (Ex: 1 234 567 890)
+  teamviewerId?: string;           // ID TeamViewer (Ex: 987 654 321)
+  appAcessoRemoto?: 'AnyDesk' | 'TeamViewer' | 'Ammyy' | 'Outro';
+  remoteDeviceName?: string;       // Nome do dispositivo no programa remoto
+  remotePassword?: string;         // Senha ou instrução de conexão remota
+  ultimoAcessoRemoto?: string;     // Data/hora do último acesso remoto realizado
   
   // Datas e auditoria
   dataPrimeiroCadastro: string;    // Data do primeiro cadastro (YYYY-MM-DD)

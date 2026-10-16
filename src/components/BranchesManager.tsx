@@ -39,6 +39,7 @@ interface BranchesManagerProps {
   onOpenChecklistForBranch: (branch: BranchUnit) => void;
   onOpenAuditForBranch: (branchId: string) => void;
   onOpenServiceOrderForBranch?: (branch: BranchUnit) => void;
+  onOpenMachinesForBranch?: (branch: BranchUnit) => void;
 }
 
 type NavigationLevel = 'MATRIZES_OVERVIEW' | 'FILIAIS_LIST' | 'ALL_UNITS';
@@ -47,6 +48,7 @@ export const BranchesManager: React.FC<BranchesManagerProps> = ({
   onOpenChecklistForBranch,
   onOpenAuditForBranch,
   onOpenServiceOrderForBranch,
+  onOpenMachinesForBranch,
 }) => {
   const {
     branches,

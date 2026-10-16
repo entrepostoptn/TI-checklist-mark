@@ -45,10 +45,26 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({
   const [status, setStatus] = useState<EquipmentStatus>('EM_USO');
   const [processador, setProcessador] = useState('');
   const [memoriaRamGb, setMemoriaRamGb] = useState<number>(8);
+  const [ramModulos, setRamModulos] = useState('');
   const [armazenamentoValor, setArmazenamentoValor] = useState<number>(240);
   const [armazenamentoUnidade, setArmazenamentoUnidade] = useState<'GB' | 'TB'>('GB');
   const [tipoArmazenamento, setTipoArmazenamento] = useState<StorageType>('SSD_SATA');
+  const [placaMae, setPlacaMae] = useState('');
   const [sistemaOperacional, setSistemaOperacional] = useState('Windows 10 Pro 64-bit');
+  const [perifericos, setPerifericos] = useState('');
+  
+  // Requisito 14: Lojas, Filiais, Setor & Caixa
+  const [filialNome, setFilialNome] = useState('');
+  const [setor, setSetor] = useState('');
+  const [numeroCaixa, setNumeroCaixa] = useState('');
+  const [nomeWindows, setNomeWindows] = useState('');
+  const [dataAquisicao, setDataAquisicao] = useState('');
+
+  // Requisito 14: Acesso Remoto
+  const [anydeskId, setAnydeskId] = useState('');
+  const [teamviewerId, setTeamviewerId] = useState('');
+  const [remotePassword, setRemotePassword] = useState('');
+
   const [dataPrimeiroCadastro, setDataPrimeiroCadastro] = useState(
     new Date().toISOString().split('T')[0]
   );
@@ -67,10 +83,21 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({
       setStatus(equipmentToEdit.status || 'EM_USO');
       setProcessador(equipmentToEdit.processador || '');
       setMemoriaRamGb(equipmentToEdit.memoriaRamGb ?? 8);
+      setRamModulos(equipmentToEdit.ramModulos || '');
       setArmazenamentoValor(equipmentToEdit.armazenamentoValor ?? 240);
       setArmazenamentoUnidade(equipmentToEdit.armazenamentoUnidade || 'GB');
       setTipoArmazenamento(equipmentToEdit.tipoArmazenamento || 'SSD_SATA');
+      setPlacaMae(equipmentToEdit.placaMae || '');
       setSistemaOperacional(equipmentToEdit.sistemaOperacional || 'Windows 10 Pro 64-bit');
+      setPerifericos(equipmentToEdit.perifericos || '');
+      setFilialNome(equipmentToEdit.filialNome || '');
+      setSetor(equipmentToEdit.setor || '');
+      setNumeroCaixa(equipmentToEdit.numeroCaixa || equipmentToEdit.posicaoCaixa || '');
+      setNomeWindows(equipmentToEdit.nomeWindows || '');
+      setDataAquisicao(equipmentToEdit.dataAquisicao || '');
+      setAnydeskId(equipmentToEdit.anydeskId || '');
+      setTeamviewerId(equipmentToEdit.teamviewerId || '');
+      setRemotePassword(equipmentToEdit.remotePassword || '');
       setDataPrimeiroCadastro(equipmentToEdit.dataPrimeiroCadastro || new Date().toISOString().split('T')[0]);
       setObservacoes(equipmentToEdit.observacoes || '');
     } else {
@@ -84,10 +111,21 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({
       setStatus('EM_USO');
       setProcessador('Intel Core i3');
       setMemoriaRamGb(8);
+      setRamModulos('1x 8GB DDR4');
       setArmazenamentoValor(240);
       setArmazenamentoUnidade('GB');
       setTipoArmazenamento('SSD_SATA');
+      setPlacaMae('');
       setSistemaOperacional('Windows 10 Pro 64-bit');
+      setPerifericos('');
+      setFilialNome('');
+      setSetor('Frente de Caixa');
+      setNumeroCaixa('Caixa 01');
+      setNomeWindows('');
+      setDataAquisicao('');
+      setAnydeskId('');
+      setTeamviewerId('');
+      setRemotePassword('');
       setDataPrimeiroCadastro(new Date().toISOString().split('T')[0]);
       setObservacoes('');
     }
@@ -105,49 +143,47 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({
       return;
     }
 
+    const payload = {
+      nome: nome.trim(),
+      patrimonio: patrimonio.trim(),
+      numeroSerie: numeroSerie.trim(),
+      tipo,
+      marcaModelo: marcaModelo.trim(),
+      lojaOrigem: lojaOrigem.trim(),
+      lojaNome: lojaOrigem.trim(),
+      localizacaoAtual,
+      status,
+      processador: processador.trim(),
+      memoriaRamGb,
+      ramModulos: ramModulos.trim(),
+      armazenamentoValor,
+      armazenamentoUnidade,
+      tipoArmazenamento,
+      placaMae: placaMae.trim(),
+      sistemaOperacional: sistemaOperacional.trim(),
+      perifericos: perifericos.trim(),
+      filialNome: filialNome.trim(),
+      setor: setor.trim(),
+      numeroCaixa: numeroCaixa.trim(),
+      posicaoCaixa: numeroCaixa.trim() || setor.trim(),
+      nomeWindows: nomeWindows.trim(),
+      dataAquisicao: dataAquisicao.trim(),
+      anydeskId: anydeskId.trim(),
+      teamviewerId: teamviewerId.trim(),
+      remotePassword: remotePassword.trim(),
+      dataPrimeiroCadastro,
+      observacoes: observacoes.trim(),
+    };
+
     if (equipmentToEdit) {
-      const result = updateEquipment(equipmentToEdit.id, {
-        nome: nome.trim(),
-        patrimonio: patrimonio.trim(),
-        numeroSerie: numeroSerie.trim(),
-        tipo,
-        marcaModelo: marcaModelo.trim(),
-        lojaOrigem: lojaOrigem.trim(),
-        localizacaoAtual,
-        status,
-        processador: processador.trim(),
-        memoriaRamGb,
-        armazenamentoValor,
-        armazenamentoUnidade,
-        tipoArmazenamento,
-        sistemaOperacional: sistemaOperacional.trim(),
-        dataPrimeiroCadastro,
-        observacoes: observacoes.trim(),
-      });
+      const result = updateEquipment(equipmentToEdit.id, payload);
 
       if (!result.success) {
         setErrorMessage(result.error || 'Erro ao atualizar equipamento.');
         return;
       }
     } else {
-      const result = addEquipment({
-        nome: nome.trim(),
-        patrimonio: patrimonio.trim(),
-        numeroSerie: numeroSerie.trim(),
-        tipo,
-        marcaModelo: marcaModelo.trim(),
-        lojaOrigem: lojaOrigem.trim(),
-        localizacaoAtual,
-        status,
-        processador: processador.trim(),
-        memoriaRamGb,
-        armazenamentoValor,
-        armazenamentoUnidade,
-        tipoArmazenamento,
-        sistemaOperacional: sistemaOperacional.trim(),
-        dataPrimeiroCadastro,
-        observacoes: observacoes.trim(),
-      });
+      const result = addEquipment(payload);
 
       if (!result.success) {
         setErrorMessage(result.error || 'Erro ao cadastrar equipamento.');
@@ -289,6 +325,111 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({
                   onChange={(e) => setLojaOrigem(e.target.value)}
                   placeholder="Ex: Loja 01 - Centro"
                   className="w-full text-xs font-medium px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-600"
+                />
+              </div>
+            </div>
+
+            {/* Hierarquia de Loja, Filial e Caixa */}
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 pt-1">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Filial
+                </label>
+                <input
+                  type="text"
+                  value={filialNome}
+                  onChange={(e) => setFilialNome(e.target.value)}
+                  placeholder="Ex: Filial Centro"
+                  className="w-full text-xs px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-600"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Setor
+                </label>
+                <input
+                  type="text"
+                  value={setor}
+                  onChange={(e) => setSetor(e.target.value)}
+                  placeholder="Ex: Frente de Caixa"
+                  className="w-full text-xs px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-600"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Número do Caixa / Posição
+                </label>
+                <input
+                  type="text"
+                  value={numeroCaixa}
+                  onChange={(e) => setNumeroCaixa(e.target.value)}
+                  placeholder="Ex: Caixa 01"
+                  className="w-full text-xs font-bold text-blue-800 px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-600"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Nome do PC (Hostname Windows)
+                </label>
+                <input
+                  type="text"
+                  value={nomeWindows}
+                  onChange={(e) => setNomeWindows(e.target.value)}
+                  placeholder="Ex: SRV-PDV01-ALPHA"
+                  className="w-full text-xs font-mono font-bold px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-600 uppercase"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Section: Acesso Remoto Integrado (AnyDesk / TeamViewer) */}
+          <div className="space-y-3 bg-red-50/40 p-4 rounded-xl border border-red-200/80">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-red-900 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-red-500 inline-block" />
+              Central de Acesso Remoto (AnyDesk / TeamViewer)
+            </h4>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+              <div>
+                <label className="block text-xs font-bold text-slate-800 mb-1">
+                  ID AnyDesk
+                </label>
+                <input
+                  type="text"
+                  value={anydeskId}
+                  onChange={(e) => setAnydeskId(e.target.value)}
+                  placeholder="Ex: 541 829 104"
+                  className="w-full text-xs font-mono font-bold text-slate-900 px-3 py-2 rounded-xl border border-slate-300 bg-white focus:border-red-500"
+                />
+                <span className="text-[10px] text-slate-400">ID para suporte remoto</span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  ID TeamViewer (Contingência)
+                </label>
+                <input
+                  type="text"
+                  value={teamviewerId}
+                  onChange={(e) => setTeamviewerId(e.target.value)}
+                  placeholder="Ex: 1 409 382 710"
+                  className="w-full text-xs font-mono font-bold text-slate-900 px-3 py-2 rounded-xl border border-slate-300 bg-white focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Senha / Instrução de Acesso
+                </label>
+                <input
+                  type="text"
+                  value={remotePassword}
+                  onChange={(e) => setRemotePassword(e.target.value)}
+                  placeholder="Ex: Padrão TI da Empresa"
+                  className="w-full text-xs px-3 py-2 rounded-xl border border-slate-300 bg-white focus:border-blue-600"
                 />
               </div>
             </div>
@@ -441,6 +582,59 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({
                   className="w-full text-xs px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-600"
                 />
               </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-1">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Placa-Mãe (Motherboard)
+                </label>
+                <input
+                  type="text"
+                  value={placaMae}
+                  onChange={(e) => setPlacaMae(e.target.value)}
+                  placeholder="Ex: Dell 0W7T6K / ASUS H310M"
+                  className="w-full text-xs px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-600"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Módulos de RAM / Barramento
+                </label>
+                <input
+                  type="text"
+                  value={ramModulos}
+                  onChange={(e) => setRamModulos(e.target.value)}
+                  placeholder="Ex: 1x 8GB DDR4 2666MHz SODIMM"
+                  className="w-full text-xs px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-600"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Data de Aquisição da Máquina
+                </label>
+                <input
+                  type="date"
+                  value={dataAquisicao}
+                  onChange={(e) => setDataAquisicao(e.target.value)}
+                  className="w-full text-xs px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-600"
+                />
+              </div>
+            </div>
+
+            <div className="pt-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Periféricos & Componentes Conectados
+              </label>
+              <input
+                type="text"
+                value={perifericos}
+                onChange={(e) => setPerifericos(e.target.value)}
+                placeholder="Ex: Leitor Elgin Quick Scan, Gaveta Menno, Impressora Elgin I9, Teclado Gertec TEC 55"
+                className="w-full text-xs px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-600"
+              />
             </div>
           </div>
 

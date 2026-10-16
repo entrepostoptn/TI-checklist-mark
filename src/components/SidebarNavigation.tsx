@@ -22,6 +22,7 @@ import {
 export type SystemPage =
   | 'dashboard'
   | 'branches'
+  | 'machines'
   | 'checklists'
   | 'templates'
   | 'knowledge_base'
@@ -64,6 +65,12 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
       label: 'Matrizes e Filiais',
       icon: Building2,
       badge: null,
+    },
+    {
+      id: 'machines' as SystemPage,
+      label: 'Máquinas e Patrimônio',
+      icon: Monitor,
+      badge: 'Módulo 14',
     },
     {
       id: 'checklists' as SystemPage,

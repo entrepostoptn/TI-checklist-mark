@@ -45,9 +45,34 @@
       },
       "required": ["id", "clienteId", "nome", "codigoLoja", "status"]
     },
+    "BranchUnit": {
+      "title": "BranchUnit",
+      "description": "Matriz ou filial cadastrada na rede Mark Security",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "idOriginal": { "type": "string" },
+        "tipo": { "type": "string" },
+        "matrizVinculadaId": { "type": "string" },
+        "cnpj": { "type": "string" },
+        "razaoSocial": { "type": "string" },
+        "nomeFantasia": { "type": "string" },
+        "cep": { "type": "string" },
+        "endereco": { "type": "string" },
+        "municipio": { "type": "string" },
+        "uf": { "type": "string" },
+        "telefone": { "type": "string" },
+        "status": { "type": "string" },
+        "responsavelLocal": { "type": "string" },
+        "observacoes": { "type": "string" },
+        "criadoEm": { "type": "string" },
+        "atualizadoEm": { "type": "string" }
+      },
+      "required": ["id", "tipo", "cnpj", "nomeFantasia", "status"]
+    },
     "Equipment": {
       "title": "Equipment",
-      "description": "Equipamento/máquina cadastrado no parque de TI",
+      "description": "Equipamento, máquina, servidor ou PDV cadastrado no parque técnico",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
@@ -57,28 +82,42 @@
         "tipo": { "type": "string" },
         "marcaModelo": { "type": "string" },
         "lojaOrigem": { "type": "string" },
+        "lojaId": { "type": "string" },
+        "filialId": { "type": "string" },
+        "setor": { "type": "string" },
+        "caixaNumero": { "type": "string" },
+        "nomeComputadorWindows": { "type": "string" },
         "localizacaoAtual": { "type": "string" },
         "status": { "type": "string" },
         "processador": { "type": "string" },
         "memoriaRamGb": { "type": "number" },
+        "memoriaSlotsDetalhes": { "type": "string" },
         "armazenamentoValor": { "type": "number" },
         "armazenamentoUnidade": { "type": "string" },
         "tipoArmazenamento": { "type": "string" },
+        "armazenamentoDetalhes": { "type": "string" },
+        "placaMae": { "type": "string" },
         "sistemaOperacional": { "type": "string" },
+        "versaoSo": { "type": "string" },
+        "perifericos": { "type": "string" },
+        "anydeskId": { "type": "string" },
+        "teamviewerId": { "type": "string" },
+        "appAcessoRemoto": { "type": "string" },
         "dataPrimeiroCadastro": { "type": "string" },
         "dataUltimaEntrada": { "type": "string" },
         "dataUltimaRetirada": { "type": "string" },
         "dataUltimaManutencao": { "type": "string" },
+        "dataUltimaFormatacao": { "type": "string" },
         "tecnicoResponsavel": { "type": "string" },
         "observacoes": { "type": "string" },
         "createdAt": { "type": "string" },
         "updatedAt": { "type": "string" }
       },
-      "required": ["id", "nome", "patrimonio", "status", "tipo"]
+      "required": ["id", "nome", "status", "tipo"]
     },
     "ServiceOrder": {
       "title": "ServiceOrder",
-      "description": "Ordem de serviço de manutenção de equipamento",
+      "description": "Ordem de serviço de manutenção de equipamento ou suporte em filial",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
@@ -88,6 +127,7 @@
         "equipamentoId": { "type": "string" },
         "tipo": { "type": "string" },
         "lojaOrigem": { "type": "string" },
+        "lojaId": { "type": "string" },
         "lojaDestino": { "type": "string" },
         "tecnicoResponsavel": { "type": "string" },
         "status": { "type": "string" },
@@ -164,20 +204,187 @@
       },
       "required": ["id", "equipamentoId", "componenteSubstituido", "componenteInstalado", "criadoEm"]
     },
-    "ChecklistRecord": {
-      "title": "ChecklistRecord",
-      "description": "Relatório salvo de checklist de preparação técnica",
+    "BranchChecklist": {
+      "title": "BranchChecklist",
+      "description": "Checklist operacional executado em uma unidade/filial",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
-        "date": { "type": "string" },
-        "machine": { "type": "object" },
-        "stats": { "type": "object" },
-        "finalObservations": { "type": "string" },
-        "itemsState": { "type": "object" },
-        "stepNotes": { "type": "object" }
+        "unidadeId": { "type": "string" },
+        "unidadeNome": { "type": "string" },
+        "templateId": { "type": "string" },
+        "templateVersao": { "type": "number" },
+        "nome": { "type": "string" },
+        "categoria": { "type": "string" },
+        "status": { "type": "string" },
+        "itens": { "type": "array" },
+        "responsavelId": { "type": "string" },
+        "responsavelNome": { "type": "string" },
+        "dataInicio": { "type": "string" },
+        "dataConclusao": { "type": "string" },
+        "observacoesGerais": { "type": "string" },
+        "criadoEm": { "type": "string" },
+        "atualizadoEm": { "type": "string" }
       },
-      "required": ["id", "date"]
+      "required": ["id", "unidadeId", "nome", "status", "criadoEm"]
+    },
+    "ChecklistTemplate": {
+      "title": "ChecklistTemplate",
+      "description": "Modelo reutilizável de checklist operacional",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "nome": { "type": "string" },
+        "categoria": { "type": "string" },
+        "descricao": { "type": "string" },
+        "versao": { "type": "number" },
+        "itens": { "type": "array" },
+        "ativo": { "type": "boolean" },
+        "criadoEm": { "type": "string" },
+        "atualizadoEm": { "type": "string" }
+      },
+      "required": ["id", "nome", "categoria", "versao"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Registro imutável de governança e auditoria operacional",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "dataHora": { "type": "string" },
+        "usuarioId": { "type": "string" },
+        "usuarioNome": { "type": "string" },
+        "usuarioPerfil": { "type": "string" },
+        "unidadeId": { "type": "string" },
+        "unidadeNome": { "type": "string" },
+        "tipoRegistro": { "type": "string" },
+        "acao": { "type": "string" },
+        "campoModificado": { "type": "string" },
+        "valorAnterior": { "type": "string" },
+        "valorNovo": { "type": "string" },
+        "motivo": { "type": "string" },
+        "detalhes": { "type": "string" }
+      },
+      "required": ["id", "dataHora", "usuarioNome", "acao"]
+    },
+    "User": {
+      "title": "User",
+      "description": "Conta individual de usuário do sistema Mark Security",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "username": { "type": "string" },
+        "nome": { "type": "string" },
+        "email": { "type": "string" },
+        "perfil": { "type": "string" },
+        "cargo": { "type": "string" },
+        "status": { "type": "string" },
+        "precisaTrocarSenha": { "type": "boolean" },
+        "criadoEm": { "type": "string" },
+        "ultimoLogin": { "type": "string" },
+        "avatarCor": { "type": "string" },
+        "passwordHash": { "type": "string" },
+        "passwordSalt": { "type": "string" }
+      },
+      "required": ["id", "username", "nome", "perfil", "status"]
+    },
+    "KnowledgeArticle": {
+      "title": "KnowledgeArticle",
+      "description": "Artigo ou procedimento técnico da Base de Conhecimento",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "titulo": { "type": "string" },
+        "categoria": { "type": "string" },
+        "categoriaNome": { "type": "string" },
+        "objetivo": { "type": "string" },
+        "quandoUtilizar": { "type": "string" },
+        "preRequisitos": { "type": "array" },
+        "passos": { "type": "array" },
+        "resultadoEsperado": { "type": "string" },
+        "validacaoFinal": { "type": "string" },
+        "oQueFazerSeErro": { "type": "string" },
+        "responsavelOuEquipe": { "type": "string" },
+        "tags": { "type": "array" },
+        "status": { "type": "string" },
+        "autorNome": { "type": "string" },
+        "criadoEm": { "type": "string" },
+        "atualizadoEm": { "type": "string" }
+      },
+      "required": ["id", "titulo", "categoria", "status"]
+    },
+    "RemoteAccess": {
+      "title": "RemoteAccess",
+      "description": "Cadastro de acesso remoto AnyDesk / TeamViewer de máquina por filial",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "maquinaId": { "type": "string" },
+        "nomeMaquina": { "type": "string" },
+        "caixaNumero": { "type": "string" },
+        "lojaId": { "type": "string" },
+        "lojaNome": { "type": "string" },
+        "filialId": { "type": "string" },
+        "filialNome": { "type": "string" },
+        "patrimonio": { "type": "string" },
+        "numeroSerie": { "type": "string" },
+        "appAcessoRemoto": { "type": "string" },
+        "anydeskId": { "type": "string" },
+        "teamviewerId": { "type": "string" },
+        "apelidoDispositivo": { "type": "string" },
+        "observacoes": { "type": "string" },
+        "status": { "type": "string" },
+        "dataUltimaAtualizacao": { "type": "string" },
+        "tecnicoResponsavel": { "type": "string" },
+        "criadoEm": { "type": "string" },
+        "atualizadoEm": { "type": "string" }
+      },
+      "required": ["id", "nomeMaquina", "lojaNome", "status"]
+    },
+    "RemoteAccessHistory": {
+      "title": "RemoteAccessHistory",
+      "description": "Registro cronológico de alterações e formatações de acesso remoto",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "remoteAccessId": { "type": "string" },
+        "maquinaId": { "type": "string" },
+        "nomeMaquina": { "type": "string" },
+        "lojaNome": { "type": "string" },
+        "filialNome": { "type": "string" },
+        "dataHora": { "type": "string" },
+        "tecnicoResponsavel": { "type": "string" },
+        "tipoEvento": { "type": "string" },
+        "campoAlterado": { "type": "string" },
+        "valorAnterior": { "type": "string" },
+        "valorNovo": { "type": "string" },
+        "motivo": { "type": "string" },
+        "descricaoServico": { "type": "string" }
+      },
+      "required": ["id", "remoteAccessId", "dataHora", "tecnicoResponsavel"]
+    },
+    "MachinePatrimonyHistory": {
+      "title": "MachinePatrimonyHistory",
+      "description": "Histórico cronológico detalhado de intervenções da máquina",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "maquinaId": { "type": "string" },
+        "patrimonio": { "type": "string" },
+        "lojaNome": { "type": "string" },
+        "filialNome": { "type": "string" },
+        "dataHora": { "type": "string" },
+        "tecnicoResponsavel": { "type": "string" },
+        "tipoEvento": { "type": "string" },
+        "detalhes": { "type": "string" },
+        "componente": { "type": "string" },
+        "especificacaoAnterior": { "type": "string" },
+        "especificacaoNova": { "type": "string" },
+        "ordemServicoId": { "type": "string" },
+        "checklistId": { "type": "string" },
+        "motivo": { "type": "string" }
+      },
+      "required": ["id", "maquinaId", "dataHora", "tipoEvento", "tecnicoResponsavel"]
     },
     "SystemConfig": {
       "title": "SystemConfig",
@@ -187,11 +394,75 @@
         "id": { "type": "string" },
         "isInitialized": { "type": "boolean" },
         "companyName": { "type": "string" },
-        "department": { "type": "string" },
-        "leadTechnician": { "type": "string" },
         "updatedAt": { "type": "string" }
       },
       "required": ["id"]
+    }
+  },
+  "firestore": {
+    "/clients/{clientId}": {
+      "schema": { "$ref": "Client" },
+      "description": "Clientes da central de suporte"
+    },
+    "/stores/{storeId}": {
+      "schema": { "$ref": "Store" },
+      "description": "Lojas e unidades operacionais"
+    },
+    "/branches/{branchId}": {
+      "schema": { "$ref": "BranchUnit" },
+      "description": "Matrizes e filiais da rede Mark Security"
+    },
+    "/equipments/{equipmentId}": {
+      "schema": { "$ref": "Equipment" },
+      "description": "Parque de máquinas, PDVs e servidores com patrimônio"
+    },
+    "/service_orders/{orderId}": {
+      "schema": { "$ref": "ServiceOrder" },
+      "description": "Ordens de serviço operacionais e chamados técnicos"
+    },
+    "/movements/{movementId}": {
+      "schema": { "$ref": "MovementRecord" },
+      "description": "Movimentações de entrada e retirada de máquinas"
+    },
+    "/hardware_changes/{changeId}": {
+      "schema": { "$ref": "HardwareChangeRecord" },
+      "description": "Substituições e trocas de componentes físicos"
+    },
+    "/branch_checklists/{chkId}": {
+      "schema": { "$ref": "BranchChecklist" },
+      "description": "Checklists operacionais executados nas lojas"
+    },
+    "/checklist_templates/{templateId}": {
+      "schema": { "$ref": "ChecklistTemplate" },
+      "description": "Modelos reutilizáveis de checklist"
+    },
+    "/audit_logs/{logId}": {
+      "schema": { "$ref": "AuditLog" },
+      "description": "Trilha imutável de auditoria e governança"
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "User" },
+      "description": "Contas de usuários e credenciais individuais"
+    },
+    "/knowledge_articles/{artId}": {
+      "schema": { "$ref": "KnowledgeArticle" },
+      "description": "Artigos técnicos e manuais operacionais"
+    },
+    "/remote_access/{accessId}": {
+      "schema": { "$ref": "RemoteAccess" },
+      "description": "Identificadores AnyDesk e TeamViewer de máquinas por loja"
+    },
+    "/remote_access_history/{histId}": {
+      "schema": { "$ref": "RemoteAccessHistory" },
+      "description": "Histórico cronológico de acessos remotos e formatações"
+    },
+    "/machine_patrimony_history/{histId}": {
+      "schema": { "$ref": "MachinePatrimonyHistory" },
+      "description": "Histórico completo de intervenções e alterações da máquina"
+    },
+    "/system_config/{configId}": {
+      "schema": { "$ref": "SystemConfig" },
+      "description": "Configurações e controle de estado do sistema"
     }
   }
 }

@@ -33,6 +33,12 @@ import {
   Tag,
   Edit2,
   FolderOpen,
+  Terminal,
+  Copy,
+  Check,
+  Building2,
+  Activity,
+  ExternalLink,
 } from 'lucide-react';
 
 interface EquipmentDetailModalProps {
@@ -61,7 +67,15 @@ export const EquipmentDetailModal: React.FC<EquipmentDetailModalProps> = ({
 
   const { orders } = useServiceOrders();
 
-  const [activeTab, setActiveTab] = useState<'specs' | 'timeline' | 'hardware' | 'orders'>('specs');
+  const [activeTab, setActiveTab] = useState<'specs' | 'remote' | 'timeline' | 'hardware' | 'orders'>('specs');
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const handleCopyText = (text: string, key: string) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(null), 2000);
+  };
   const [showAddMovementForm, setShowAddMovementForm] = useState(false);
   const [showAddHardwareForm, setShowAddHardwareForm] = useState(false);
 
@@ -205,46 +219,59 @@ export const EquipmentDetailModal: React.FC<EquipmentDetailModalProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('specs')}
-            className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-t-xl text-xs font-bold transition-all border-b-2 ${
+            className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-t-xl text-xs font-bold transition-all border-b-2 shrink-0 ${
               activeTab === 'specs'
                 ? 'bg-white text-blue-700 border-blue-600 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 border-transparent hover:bg-slate-200/60'
             }`}
           >
             <Cpu className="w-4 h-4" />
-            <span>Dados Técnicos & Especificações</span>
+            <span>Ficha Patrimonial & Hardware</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('remote')}
+            className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-t-xl text-xs font-bold transition-all border-b-2 shrink-0 ${
+              activeTab === 'remote'
+                ? 'bg-white text-blue-700 border-blue-600 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 border-transparent hover:bg-slate-200/60'
+            }`}
+          >
+            <Terminal className="w-4 h-4 text-red-500" />
+            <span>Acesso Remoto ({equipment.anydeskId ? 'AnyDesk' : equipment.teamviewerId ? 'TeamViewer' : 'Pendente'})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('timeline')}
-            className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-t-xl text-xs font-bold transition-all border-b-2 ${
+            className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-t-xl text-xs font-bold transition-all border-b-2 shrink-0 ${
               activeTab === 'timeline'
                 ? 'bg-white text-blue-700 border-blue-600 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 border-transparent hover:bg-slate-200/60'
             }`}
           >
             <Clock className="w-4 h-4" />
-            <span>Linha do Tempo de Movimentações ({movements.length})</span>
+            <span>Movimentações & Lojas ({movements.length})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('hardware')}
-            className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-t-xl text-xs font-bold transition-all border-b-2 ${
+            className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-t-xl text-xs font-bold transition-all border-b-2 shrink-0 ${
               activeTab === 'hardware'
                 ? 'bg-white text-blue-700 border-blue-600 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 border-transparent hover:bg-slate-200/60'
             }`}
           >
             <HardDrive className="w-4 h-4" />
-            <span>Peças & Alterações ({hardwareChanges.length})</span>
+            <span>Peças & Substituições ({hardwareChanges.length})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('orders')}
-            className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-t-xl text-xs font-bold transition-all border-b-2 ${
+            className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-t-xl text-xs font-bold transition-all border-b-2 shrink-0 ${
               activeTab === 'orders'
                 ? 'bg-white text-blue-700 border-blue-600 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 border-transparent hover:bg-slate-200/60'
@@ -302,28 +329,89 @@ export const EquipmentDetailModal: React.FC<EquipmentDetailModalProps> = ({
                 </div>
               </div>
 
-              {/* Location & Status Summary */}
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-3.5 text-xs">
-                <div>
-                  <span className="text-slate-500 font-semibold block">Localização Atual:</span>
-                  <span className="text-slate-900 font-bold text-sm mt-0.5 block">
-                    {LOCATION_LABELS[equipment.localizacaoAtual]}
-                  </span>
+              {/* Complete Patrimonial Identification Grid (Requisito 14.3 A) */}
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5 pb-2 border-b border-slate-200">
+                  <Building2 className="w-3.5 h-3.5 text-blue-600" />
+                  Identificação Patrimonial & Localização na Empresa
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-semibold block uppercase">ID Permanente</span>
+                    <span className="font-mono font-bold text-slate-800 text-[11px] select-all">{equipment.id}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-semibold block uppercase">Hostname Windows</span>
+                    <span className="font-mono font-bold text-blue-700 text-xs">{equipment.nomeWindows || 'Não configurado'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-semibold block uppercase">Loja / Unidade</span>
+                    <span className="font-bold text-slate-800">{equipment.lojaOrigem || equipment.lojaNome || 'Matriz'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-semibold block uppercase">Filial</span>
+                    <span className="font-bold text-slate-800">{equipment.filialNome || 'Filial Principal'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-semibold block uppercase">Setor / Caixa</span>
+                    <span className="font-bold text-slate-800">{equipment.numeroCaixa || equipment.posicaoCaixa || equipment.setor || 'Frente de Caixa'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-semibold block uppercase">Número de Série</span>
+                    <span className="font-mono font-bold text-slate-800">{equipment.numeroSerie || '—'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-semibold block uppercase">Fabricante & Modelo</span>
+                    <span className="font-medium text-slate-800">{equipment.marcaModelo || equipment.marca || 'Padrão'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-semibold block uppercase">Data de Aquisição</span>
+                    <span className="font-medium text-slate-800">{formatDateBR(equipment.dataAquisicao) || 'Não informada'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Hardware Spec Cards Grid (Requisito 14.3 B) */}
+              <div className="border border-slate-200 rounded-xl p-4 space-y-3">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5 pb-2 border-b border-slate-100">
+                  <Cpu className="w-3.5 h-3.5 text-blue-600" />
+                  Configuração Técnica Detalhada do Hardware
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Processador</span>
+                    <span className="text-xs font-bold text-slate-900 block mt-0.5">{equipment.processador || 'Não informado'}</span>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Memória RAM</span>
+                    <span className="text-xs font-bold text-slate-900 block mt-0.5">{equipment.memoriaRamGb} GB</span>
+                    {equipment.ramModulos && (
+                      <span className="text-[10px] text-slate-500 block mt-0.5">{equipment.ramModulos}</span>
+                    )}
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Armazenamento</span>
+                    <span className="text-xs font-bold text-slate-900 block mt-0.5">
+                      {equipment.armazenamentoValor
+                        ? `${equipment.armazenamentoValor} ${equipment.armazenamentoUnidade || 'GB'} (${equipment.tipoArmazenamento ? equipment.tipoArmazenamento.replace('_', ' ') : 'SSD'})`
+                        : 'Não especificado'}
+                    </span>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Placa-Mãe</span>
+                    <span className="text-xs font-bold text-slate-900 block mt-0.5">{equipment.placaMae || 'Padrão Fabricante'}</span>
+                  </div>
                 </div>
 
-                <div>
-                  <span className="text-slate-500 font-semibold block">Loja de Origem:</span>
-                  <span className="text-slate-900 font-bold text-sm mt-0.5 block">
-                    {equipment.lojaOrigem}
-                  </span>
-                </div>
-
-                <div>
-                  <span className="text-slate-500 font-semibold block">Técnico de Referência:</span>
-                  <span className="text-slate-900 font-bold text-sm mt-0.5 block">
-                    {equipment.tecnicoResponsavel || 'Não atribuído'}
-                  </span>
-                </div>
+                {equipment.perifericos && (
+                  <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100 text-xs">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Periféricos e Componentes Conectados</span>
+                    <span className="text-slate-700 font-medium">{equipment.perifericos}</span>
+                  </div>
+                )}
               </div>
 
               {/* Timeline Dates Box */}
@@ -359,6 +447,165 @@ export const EquipmentDetailModal: React.FC<EquipmentDetailModalProps> = ({
                   <p className="text-slate-800 leading-relaxed">{equipment.observacoes}</p>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* TAB 2: ACESSO REMOTO (Requisito 14.3 C) */}
+          {activeTab === 'remote' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                    <Terminal className="w-4 h-4 text-red-500" />
+                    Central de Acesso Remoto (AnyDesk / TeamViewer)
+                  </h4>
+                  <p className="text-xs text-slate-500">
+                    Acesso remoto direto a este terminal na loja para suporte imediato sem deslocamento.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* AnyDesk Card */}
+                <div className="bg-slate-50 rounded-2xl border border-slate-200 p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-red-100 text-red-700 flex items-center justify-center font-bold">
+                        <Terminal className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h5 className="font-bold text-sm text-slate-900">AnyDesk</h5>
+                        <span className="text-[10px] text-slate-500">Conexão Remota Primária</span>
+                      </div>
+                    </div>
+                    {equipment.anydeskId ? (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        Configurado
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                        Não informado
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="bg-white rounded-xl p-3 border border-slate-200 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-bold text-slate-400">ID de Acesso</span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyText(equipment.anydeskId || '', 'anydesk')}
+                        disabled={!equipment.anydeskId}
+                        className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                      >
+                        {copiedKey === 'anydesk' ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-emerald-600" />
+                            <span className="text-emerald-600">Copiado!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5" />
+                            <span>Copiar ID</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <div className="font-mono font-black text-lg text-slate-900 tracking-wider">
+                      {equipment.anydeskId || '— — — — — —'}
+                    </div>
+                  </div>
+
+                  {equipment.anydeskId && (
+                    <a
+                      href={`anydesk:${equipment.anydeskId.replace(/\s+/g, '')}`}
+                      className="w-full py-2.5 px-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs min-h-[42px]"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      <span>Conectar via AnyDesk</span>
+                    </a>
+                  )}
+                </div>
+
+                {/* TeamViewer Card */}
+                <div className="bg-slate-50 rounded-2xl border border-slate-200 p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
+                        <Terminal className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h5 className="font-bold text-sm text-slate-900">TeamViewer</h5>
+                        <span className="text-[10px] text-slate-500">Conexão Remota de Contingência</span>
+                      </div>
+                    </div>
+                    {equipment.teamviewerId ? (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        Configurado
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 text-slate-600">
+                        Opcional
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="bg-white rounded-xl p-3 border border-slate-200 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-bold text-slate-400">ID TeamViewer</span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyText(equipment.teamviewerId || '', 'teamviewer')}
+                        disabled={!equipment.teamviewerId}
+                        className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                      >
+                        {copiedKey === 'teamviewer' ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-emerald-600" />
+                            <span className="text-emerald-600">Copiado!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5" />
+                            <span>Copiar ID</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <div className="font-mono font-black text-lg text-slate-900 tracking-wider">
+                      {equipment.teamviewerId || '— — — — — —'}
+                    </div>
+                  </div>
+
+                  {equipment.teamviewerId && (
+                    <a
+                      href={`teamviewer10://control?device=${equipment.teamviewerId.replace(/\s+/g, '')}`}
+                      className="w-full py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs min-h-[42px]"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      <span>Conectar via TeamViewer</span>
+                    </a>
+                  )}
+                </div>
+              </div>
+
+              {/* Remote Device & Instructions */}
+              <div className="bg-white rounded-xl p-4 border border-slate-200 space-y-2 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase block">Nome do Dispositivo no App Remoto</span>
+                    <span className="font-semibold text-slate-800 text-xs mt-0.5 block">{equipment.remoteDeviceName || equipment.nomeWindows || equipment.nome}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase block">Senha / Instrução de Acesso</span>
+                    <span className="font-semibold text-slate-800 text-xs mt-0.5 block">{equipment.remotePassword || 'Padrão TI da Empresa'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase block">Último Acesso Registrado</span>
+                    <span className="font-semibold text-slate-800 text-xs mt-0.5 block">{formatDateTimeBR(equipment.ultimoAcessoRemoto) || 'Sem registros recentes'}</span>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
