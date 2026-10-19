@@ -107,6 +107,12 @@ service cloud.firestore {
       allow write: if isValidId(histId);
     }
 
+    // Projetos de Câmeras CFTV e Plantas Baixas Interativas
+    match /cctv_projects/{projectId} {
+      allow get, list: if true;
+      allow write: if isValidId(projectId);
+    }
+
     // Configurações do Sistema e Controle de Sincronização
     match /system_config/{configId} {
       allow get, list: if true;

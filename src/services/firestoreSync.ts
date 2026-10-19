@@ -21,6 +21,7 @@ import { ChecklistTemplate, BranchChecklist } from '../types/branchChecklist';
 import { KnowledgeArticle } from '../types/knowledgeBase';
 import { User } from '../types/auth';
 import { RemoteAccess, RemoteAccessHistory } from '../types/remoteAccess';
+import { CctvProject, CctvPermissionsConfig } from '../types/cctv';
 import {
   INITIAL_PATA_NEGRA_BRANCHES,
   INITIAL_CHECKLIST_TEMPLATES,
@@ -297,6 +298,13 @@ export async function ensureGlobalDatabaseSeeded(
         }
         await hwBatch.commit();
       }
+    }
+
+    // Ensure default CCTV permissions exist (Matheus has full access; Marcos is blocked by default)
+    const cctvPermRef = doc(db, 'system_config', 'cctv_permissions');
+    const cctvPermSnap = await getDoc(cctvPermRef);
+    if (!cctvPermSnap.exists()) {
+      await setDoc(cctvPermRef, sanitizeForFirestore(DEFAULT_CCTV_PERMISSIONS));
     }
 
     // Mark global seed document as completed
@@ -1026,6 +1034,95 @@ export async function syncSaveRemoteAccessHistory(item: RemoteAccessHistory): Pr
   try {
     await setDoc(doc(db, 'remote_access_history', item.id), sanitizeForFirestore(item), { merge: true });
     notifySyncSuccess('remote_access_history');
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+// 15. Projetos de Câmeras CFTV & Plantas Baixas
+export function subscribeToCctvProjects(
+  onData: (projects: CctvProject[]) => void,
+  onError?: (err: Error) => void
+): Unsubscribe {
+  const path = 'cctv_projects';
+  return onSnapshot(
+    collection(db, path),
+    (snapshot) => {
+      const items: CctvProject[] = [];
+      snapshot.forEach((docSnap) => {
+        items.push({ id: docSnap.id, ...(docSnap.data() as Omit<CctvProject, 'id'>) });
+      });
+      items.sort((a, b) => new Date(b.atualizadoEm || b.criadoEm).getTime() - new Date(a.atualizadoEm || a.criadoEm).getTime());
+      notifySyncSuccess(path, items.length);
+      onData(items);
+    },
+    (error) => {
+      onError?.(error);
+      handleFirestoreError(error, OperationType.LIST, path);
+    }
+  );
+}
+
+export async function syncSaveCctvProject(project: CctvProject): Promise<void> {
+  const path = `cctv_projects/${project.id}`;
+  try {
+    await setDoc(doc(db, 'cctv_projects', project.id), sanitizeForFirestore(project), { merge: true });
+    notifySyncSuccess('cctv_projects');
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+export async function syncDeleteCctvProject(id: string): Promise<void> {
+  const path = `cctv_projects/${id}`;
+  try {
+    await deleteDoc(doc(db, 'cctv_projects', id));
+    notifySyncSuccess('cctv_projects');
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+
+// 16. Configuração de Permissões CFTV (Matheus -> Marcos)
+export const DEFAULT_CCTV_PERMISSIONS: CctvPermissionsConfig = {
+  marcosViewAllowed: false,
+  marcosEditAllowed: false,
+  atualizadoEm: new Date().toISOString(),
+  atualizadoPor: 'Matheus Guarnieri',
+};
+
+export function subscribeToCctvPermissions(
+  onData: (config: CctvPermissionsConfig) => void,
+  onError?: (err: Error) => void
+): Unsubscribe {
+  const path = 'system_config/cctv_permissions';
+  return onSnapshot(
+    doc(db, 'system_config', 'cctv_permissions'),
+    (snap) => {
+      if (snap.exists()) {
+        const data = snap.data() as CctvPermissionsConfig;
+        onData(data);
+      } else {
+        onData(DEFAULT_CCTV_PERMISSIONS);
+      }
+      notifySyncSuccess('cctv_permissions');
+    },
+    (error) => {
+      onError?.(error);
+      handleFirestoreError(error, OperationType.GET, path);
+    }
+  );
+}
+
+export async function syncSaveCctvPermissions(config: CctvPermissionsConfig): Promise<void> {
+  const path = 'system_config/cctv_permissions';
+  try {
+    await setDoc(
+      doc(db, 'system_config', 'cctv_permissions'),
+      sanitizeForFirestore({ ...config, atualizadoEm: new Date().toISOString() }),
+      { merge: true }
+    );
+    notifySyncSuccess('cctv_permissions');
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
   }

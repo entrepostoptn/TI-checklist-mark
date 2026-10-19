@@ -33,6 +33,7 @@ import {
   Layers,
   ExternalLink,
   Shield,
+  Video,
 } from 'lucide-react';
 
 interface BranchesManagerProps {
@@ -40,6 +41,7 @@ interface BranchesManagerProps {
   onOpenAuditForBranch: (branchId: string) => void;
   onOpenServiceOrderForBranch?: (branch: BranchUnit) => void;
   onOpenMachinesForBranch?: (branch: BranchUnit) => void;
+  onOpenCctvForBranch?: (branch: BranchUnit) => void;
 }
 
 type NavigationLevel = 'MATRIZES_OVERVIEW' | 'FILIAIS_LIST' | 'ALL_UNITS';
@@ -49,6 +51,7 @@ export const BranchesManager: React.FC<BranchesManagerProps> = ({
   onOpenAuditForBranch,
   onOpenServiceOrderForBranch,
   onOpenMachinesForBranch,
+  onOpenCctvForBranch,
 }) => {
   const {
     branches,
@@ -891,6 +894,18 @@ export const BranchesManager: React.FC<BranchesManagerProps> = ({
                               >
                                 <ClipboardList className="w-3.5 h-3.5" />
                               </button>
+
+                              {/* Projeto CFTV */}
+                              {permissions.podeAcessarCctv && onOpenCctvForBranch && (
+                                <button
+                                  type="button"
+                                  onClick={() => onOpenCctvForBranch(branch)}
+                                  className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50"
+                                  title="Abrir Projeto de Câmeras (CFTV)"
+                                >
+                                  <Video className="w-3.5 h-3.5 text-blue-600" />
+                                </button>
+                              )}
 
                               {/* Editar */}
                               {permissions.podeEditarFiliais && (

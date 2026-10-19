@@ -25,6 +25,8 @@ export interface UserPermissions {
   podeReabrirChecklists: boolean;
   podeGerenciarModelos: boolean;
   podeVerAuditoria: boolean;
+  podeAcessarCctv: boolean;
+  podeEditarCctv: boolean;
 }
 
 export interface AuthSession {

@@ -17,12 +17,14 @@ import {
   FileText,
   X,
   BookOpen,
+  Video,
 } from 'lucide-react';
 
 export type SystemPage =
   | 'dashboard'
   | 'branches'
   | 'machines'
+  | 'cctv'
   | 'checklists'
   | 'templates'
   | 'knowledge_base'
@@ -50,7 +52,7 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
   onCloseMobile,
   onOpenSettingsModal,
 }) => {
-  const { user, permissions, logout } = useAuth();
+  const { user, isMatheus, permissions, logout } = useAuth();
   const isAdmin = user?.perfil === 'ADMIN';
 
   const navItems = [
@@ -219,6 +221,48 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
               })}
             </nav>
           </div>
+
+          {/* Módulo Oculto de Projeto de Câmeras (CFTV) - Acesso exclusivo Matheus ou Marcos autorizado */}
+          {permissions.podeAcessarCctv && (
+            <div>
+              <div className="px-3 mb-2 text-[10px] font-bold uppercase tracking-wider text-blue-400 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Video className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Segurança Eletrônica</span>
+                </span>
+                {isMatheus && (
+                  <span className="text-[9px] px-1.5 py-0.2 bg-blue-900/80 text-blue-300 rounded font-bold font-mono">
+                    CFTV
+                  </span>
+                )}
+              </div>
+              <nav className="space-y-1">
+                <button
+                  type="button"
+                  onClick={() => handleNavClick('cctv')}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                    currentPage === 'cctv'
+                      ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/30 ring-1 ring-blue-400'
+                      : 'text-blue-100 hover:text-white hover:bg-blue-950/40 border border-blue-500/30'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Video className={`w-4 h-4 ${currentPage === 'cctv' ? 'text-white' : 'text-blue-400'}`} />
+                    <span>Projeto de Câmeras</span>
+                  </div>
+                  {isMatheus ? (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded font-extrabold uppercase bg-amber-400 text-slate-950">
+                      Matheus
+                    </span>
+                  ) : (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase bg-blue-500/20 text-blue-300">
+                      CFTV
+                    </span>
+                  )}
+                </button>
+              </nav>
+            </div>
+          )}
 
           {/* Admin Section (Strict Server Validation) */}
           {permissions.podeGerenciarUsuarios && (

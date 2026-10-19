@@ -1,17 +1,23 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { User, UserRole, UserPermissions } from '../types/auth';
+import { CctvPermissionsConfig } from '../types/cctv';
 import { verifyUserPassword, hashPasswordWithSalt, generateSalt, PRESET_SALTS } from '../utils/cryptoAuth';
 import {
   subscribeToUsers,
   syncSaveUser,
   subscribeToCredentials,
   syncSaveCredentials,
+  subscribeToCctvPermissions,
+  syncSaveCctvPermissions,
+  DEFAULT_CCTV_PERMISSIONS,
 } from '../services/firestoreSync';
 
 interface AuthContextType {
   user: User | null;
   users: User[];
   permissions: UserPermissions;
+  cctvPermissions: CctvPermissionsConfig;
+  isMatheus: boolean;
   isLoading: boolean;
   loginError: string | null;
   login: (usernameOrName: string, password: string) => Promise<{ success: boolean; error?: string }>;
@@ -21,6 +27,7 @@ interface AuthContextType {
   resetUserPassword: (targetUserId: string, newPassword: string, motivo: string) => Promise<{ success: boolean; error?: string }>;
   changeOwnPassword: (oldPassword: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
   toggleUserStatus: (id: string) => Promise<{ success: boolean; error?: string }>;
+  updateCctvPermissions: (patch: Partial<CctvPermissionsConfig>) => Promise<{ success: boolean; error?: string }>;
 }
 
 const STORAGE_KEY_AUTH_USER = 'ptn_auth_current_user_v2';
@@ -179,9 +186,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
+  // Sincronização em tempo real das permissões de CFTV (Matheus -> Marcos)
+  const [cctvPermissions, setCctvPermissions] = useState<CctvPermissionsConfig>(DEFAULT_CCTV_PERMISSIONS);
+
+  useEffect(() => {
+    const unsub = subscribeToCctvPermissions((cfg) => {
+      if (cfg) {
+        setCctvPermissions(cfg);
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  const isMatheus = useMemo(() => {
+    if (!user) return false;
+    const lowerUser = (user.username || '').toLowerCase();
+    const lowerNome = (user.nome || '').toLowerCase();
+    return user.id === 'user_matheus' || lowerUser === 'matheus' || lowerNome.includes('matheus');
+  }, [user]);
+
+  const isMarcos = useMemo(() => {
+    if (!user) return false;
+    const lowerUser = (user.username || '').toLowerCase();
+    const lowerNome = (user.nome || '').toLowerCase();
+    return user.id === 'user_marcos' || lowerUser === 'marcos' || lowerNome.includes('marcos');
+  }, [user]);
+
   // Permissões dinâmicas baseadas no perfil do usuário logado
   const permissions: UserPermissions = useMemo(() => {
     const isAdmin = user?.perfil === 'ADMIN';
+    const podeAcessarCctv = isMatheus || (isMarcos && cctvPermissions.marcosViewAllowed);
+    const podeEditarCctv = isMatheus || (isMarcos && cctvPermissions.marcosEditAllowed);
+
     return {
       podeGerenciarUsuarios: isAdmin,
       podeRedefinirSenhas: isAdmin,
@@ -193,8 +229,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       podeReabrirChecklists: isAdmin,
       podeGerenciarModelos: isAdmin,
       podeVerAuditoria: true,
+      podeAcessarCctv,
+      podeEditarCctv,
     };
-  }, [user]);
+  }, [user, isMatheus, isMarcos, cctvPermissions]);
+
+  // Atualização exclusiva por Matheus das permissões de visualização e edição de Marcos
+  const updateCctvPermissions = useCallback(
+    async (patch: Partial<CctvPermissionsConfig>): Promise<{ success: boolean; error?: string }> => {
+      if (!isMatheus) {
+        return {
+          success: false,
+          error: 'Apenas o usuário Matheus tem permissão para configurar os acessos ao módulo de Câmeras CFTV.',
+        };
+      }
+
+      const updated: CctvPermissionsConfig = {
+        ...cctvPermissions,
+        ...patch,
+        atualizadoEm: new Date().toISOString(),
+        atualizadoPor: user?.nome || 'Matheus Guarnieri',
+      };
+
+      setCctvPermissions(updated);
+
+      try {
+        await syncSaveCctvPermissions(updated);
+        return { success: true };
+      } catch (err: any) {
+        return { success: false, error: err.message || 'Falha ao salvar permissões no banco' };
+      }
+    },
+    [isMatheus, cctvPermissions, user]
+  );
 
   // Login com validação de hash criptográfico e bloqueio de tentativas repetidas
   const login = useCallback(
@@ -478,6 +545,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         resetUserPassword,
         changeOwnPassword,
         toggleUserStatus,
+        cctvPermissions,
+        isMatheus,
+        updateCctvPermissions,
       }}
     >
       {children}

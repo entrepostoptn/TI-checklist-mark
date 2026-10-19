@@ -8,6 +8,7 @@ import { ClientProvider } from './context/ClientContext';
 import { ChecklistProvider, useChecklist } from './context/ChecklistContext';
 import { ServiceOrderProvider } from './context/ServiceOrderContext';
 import { EquipmentProvider } from './context/EquipmentContext';
+import { CctvProvider } from './context/CctvContext';
 import { ensureGlobalDatabaseSeeded } from './services/firestoreSync';
 
 // Components
@@ -21,6 +22,7 @@ import { AuditHistoryView } from './components/AuditHistoryView';
 import { UserManagerView } from './components/UserManagerView';
 import { KnowledgeBaseView } from './components/KnowledgeBaseView';
 import { MachinesManager } from './components/MachinesManager';
+import { CctvProjectView } from './components/CctvProjectView';
 
 // Existing Matrix TI Components (Preserving full legacy functionality)
 import { EquipmentManager } from './components/EquipmentManager';
@@ -313,6 +315,7 @@ const MainApp: React.FC = () => {
                 setIsDirectOsModalOpen(true);
               }}
               onOpenMachinesForBranch={() => setCurrentPage('machines')}
+              onOpenCctvForBranch={() => setCurrentPage('cctv')}
             />
           )}
 
@@ -323,6 +326,9 @@ const MainApp: React.FC = () => {
               onOpenServiceOrderForMachine={handleOpenServiceOrderForMachine}
             />
           )}
+
+          {/* Módulo Oculto de Projeto de Câmeras (CFTV) - Acesso Matheus / Marcos autorizado */}
+          {currentPage === 'cctv' && <CctvProjectView />}
 
           {/* Section 3: Checklists das Unidades (Requirement 3) */}
           {currentPage === 'checklists' && (
@@ -569,7 +575,9 @@ export default function App() {
                   <EquipmentProvider>
                     <ServiceOrderProvider>
                       <ChecklistProvider>
-                        <MainApp />
+                        <CctvProvider>
+                          <MainApp />
+                        </CctvProvider>
                       </ChecklistProvider>
                     </ServiceOrderProvider>
                   </EquipmentProvider>
