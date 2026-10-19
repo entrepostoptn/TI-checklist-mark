@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { ServiceOrder, ServiceOrderStatus, ServiceOrderPriority } from '../types/serviceOrder';
 import { useServiceOrders } from '../context/ServiceOrderContext';
 import { useEquipment } from '../context/EquipmentContext';
+import { useBranches } from '../context/BranchContext';
 import { MachineType } from '../types/checklist';
 import { Equipment } from '../types/equipment';
 import { formatDateBR, formatShortDateTimeBR } from '../utils/dateFormatter';
@@ -45,6 +46,7 @@ export const ServiceOrderModal: React.FC<ServiceOrderModalProps> = ({
 }) => {
   const { addOrder, updateOrder } = useServiceOrders();
   const { equipments, updateEquipment, addMovement, addHardwareChange } = useEquipment();
+  const { branches } = useBranches();
 
   // Machine selection state
   const [selectedEquipmentId, setSelectedEquipmentId] = useState<string>('');
@@ -197,14 +199,22 @@ export const ServiceOrderModal: React.FC<ServiceOrderModalProps> = ({
     }
     setFormError(null);
 
+    const matchingBranch = branches.find(
+      (b) => b.nomeFantasia === lojaOrigem || b.id === lojaOrigem || b.razaoSocial === lojaOrigem
+    );
+
     const orderPayload = {
       equipamentoId: selectedEquipmentId || undefined,
       identificacao,
       patrimonio,
       numeroSerie,
       tipo,
+      lojaId: matchingBranch?.id || orderToEdit?.lojaId,
+      lojaNome: matchingBranch?.nomeFantasia || lojaOrigem,
       lojaOrigem,
-      lojaDestino,
+      lojaDestino: lojaDestino || lojaOrigem,
+      clienteId: matchingBranch?.tipo === 'MATRIZ' ? matchingBranch.id : (matchingBranch?.matrizVinculadaId || 'branch_ptn_matriz'),
+      clienteNome: matchingBranch?.tipo === 'MATRIZ' ? matchingBranch.nomeFantasia : 'Mark Security',
       tecnicoResponsavel,
       responsavelEntrega,
       responsavelRetirada,
@@ -571,29 +581,48 @@ export const ServiceOrderModal: React.FC<ServiceOrderModalProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Loja de Origem <span className="text-red-500">*</span>
+                  Matriz / Filial de Origem <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
+                <select
                   required
                   value={lojaOrigem}
-                  onChange={(e) => setLojaOrigem(e.target.value)}
-                  placeholder="Ex: Loja 01 - Centro"
-                  className="w-full text-xs font-medium px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-600"
-                />
+                  onChange={(e) => {
+                    setLojaOrigem(e.target.value);
+                    if (!lojaDestino) setLojaDestino(e.target.value);
+                  }}
+                  className="w-full text-xs font-medium px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-600 bg-white"
+                >
+                  <option value="">Selecione a Matriz ou Filial...</option>
+                  {branches.map((b) => (
+                    <option key={b.id} value={b.nomeFantasia}>
+                      {b.tipo === 'MATRIZ' ? '🏢 MATRIZ' : `🏬 Filial ${b.idOriginal}`} — {b.nomeFantasia}
+                    </option>
+                  ))}
+                  {lojaOrigem && !branches.some((b) => b.nomeFantasia === lojaOrigem) && (
+                    <option value={lojaOrigem}>{lojaOrigem}</option>
+                  )}
+                </select>
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Destino Após Manutenção
                 </label>
-                <input
-                  type="text"
+                <select
                   value={lojaDestino}
                   onChange={(e) => setLojaDestino(e.target.value)}
-                  placeholder="Ex: Loja 01 - Retorno"
-                  className="w-full text-xs font-medium px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-600"
-                />
+                  className="w-full text-xs font-medium px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-600 bg-white"
+                >
+                  <option value="">Mesma Unidade de Origem</option>
+                  {branches.map((b) => (
+                    <option key={b.id} value={b.nomeFantasia}>
+                      {b.tipo === 'MATRIZ' ? '🏢 MATRIZ' : `🏬 Filial ${b.idOriginal}`} — {b.nomeFantasia}
+                    </option>
+                  ))}
+                  {lojaDestino && !branches.some((b) => b.nomeFantasia === lojaDestino) && (
+                    <option value={lojaDestino}>{lojaDestino}</option>
+                  )}
+                </select>
               </div>
 
               <div>

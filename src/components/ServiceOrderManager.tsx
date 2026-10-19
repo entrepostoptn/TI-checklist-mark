@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useServiceOrders } from '../context/ServiceOrderContext';
 import { useClients } from '../context/ClientContext';
+import { useBranches } from '../context/BranchContext';
 import { useEquipment } from '../context/EquipmentContext';
 import { ServiceOrder, ServiceOrderStatus, ServiceOrderPriority, STATUS_LABELS, PRIORITY_CONFIG } from '../types/serviceOrder';
 import { MachineType } from '../types/checklist';
@@ -67,6 +68,7 @@ export const ServiceOrderManager: React.FC<ServiceOrderManagerProps> = ({
   } = useServiceOrders();
 
   const { clients, stores } = useClients();
+  const { branches } = useBranches();
   const { equipments } = useEquipment();
 
   // Modals state
@@ -139,11 +141,15 @@ export const ServiceOrderManager: React.FC<ServiceOrderManagerProps> = ({
         }
       }
 
-      // Store filter
+      // Store filter (Filiais e Matriz da aba Lojas)
       if (storeFilter !== 'ALL') {
-        const store = stores.find((s) => s.id === storeFilter);
-        const storeName = store?.nome || '';
-        if (o.lojaId !== storeFilter && o.lojaOrigem !== storeName && o.lojaNome !== storeName) {
+        const branch = branches.find((b) => b.id === storeFilter);
+        const branchName = branch?.nomeFantasia || '';
+        const branchCode = branch ? `Loja ${branch.idOriginal}` : '';
+        const matchesId = o.lojaId === storeFilter;
+        const matchesName = Boolean(branchName && (o.lojaOrigem === branchName || o.lojaNome === branchName));
+        const matchesCode = Boolean(branchCode && ((o.lojaOrigem && o.lojaOrigem.includes(branchCode)) || (o.lojaNome && o.lojaNome.includes(branchCode))));
+        if (!matchesId && !matchesName && !matchesCode) {
           return false;
         }
       }
@@ -456,17 +462,17 @@ export const ServiceOrderManager: React.FC<ServiceOrderManagerProps> = ({
             </select>
           </div>
 
-          {/* Filter Store */}
+          {/* Filter Store / Branch (Aba Lojas) */}
           <div>
             <select
               value={storeFilter}
               onChange={(e) => setStoreFilter(e.target.value)}
-              className="w-full py-2 px-2.5 rounded-xl border border-slate-300 bg-white font-semibold text-slate-700 outline-none"
+              className="w-full py-2 px-2.5 rounded-xl border border-slate-300 bg-white font-semibold text-slate-700 outline-none text-xs"
             >
-              <option value="ALL">Todas as Lojas</option>
-              {storesForFilter.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.nome}
+              <option value="ALL">Todas as Lojas & Filiais ({branches.length})</option>
+              {branches.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.tipo === 'MATRIZ' ? '🏢 MATRIZ' : `🏬 Filial ${b.idOriginal}`} — {b.nomeFantasia}
                 </option>
               ))}
             </select>

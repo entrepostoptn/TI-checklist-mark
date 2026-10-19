@@ -83,6 +83,10 @@ export interface ServiceOrder {
   checklistProgresso?: number;     // % do checklist completado
   checklistConcluido?: boolean;
   
+  // Evidências Fotográficas
+  fotoAbertura?: string;           // Foto na abertura do serviço
+  fotoFechamento?: string;         // Foto no fechamento / conclusão do serviço
+
   observacoes?: string;
   createdAt: string;
   updatedAt: string;

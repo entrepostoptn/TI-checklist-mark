@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { useClients } from '../context/ClientContext';
+import { useBranches } from '../context/BranchContext';
 import { useEquipment } from '../context/EquipmentContext';
 import { useServiceOrders } from '../context/ServiceOrderContext';
-import { Client, Store } from '../types/client';
+import { BranchUnit } from '../types/branch';
 import { Equipment, EquipmentType } from '../types/equipment';
 import { ServiceOrder, ServiceOrderStatus, ServiceOrderPriority, ServiceOrderType } from '../types/serviceOrder';
 import { formatDateBR } from '../utils/dateFormatter';
@@ -29,12 +29,14 @@ import {
   Server,
   Network,
   Sparkles,
+  Building,
 } from 'lucide-react';
 
 interface ServiceOrderFastModalProps {
   isOpen: boolean;
   onClose: () => void;
-  preselectedStore?: Store | null;
+  preselectedBranch?: BranchUnit | null;
+  preselectedStore?: any;
   preselectedEquipment?: Equipment | null;
   onOrderCreated?: (order: ServiceOrder) => void;
 }
@@ -42,32 +44,28 @@ interface ServiceOrderFastModalProps {
 export const ServiceOrderFastModal: React.FC<ServiceOrderFastModalProps> = ({
   isOpen,
   onClose,
+  preselectedBranch,
   preselectedStore,
   preselectedEquipment,
   onOrderCreated,
 }) => {
-  const { clients, stores } = useClients();
+  const { branches, matriz, filiais } = useBranches();
   const { equipments, addEquipment } = useEquipment();
   const { addOrder, getOrdersByEquipmentId } = useServiceOrders();
 
-  // Wizard Steps (1 to 4)
+  // Wizard Steps (1: Matriz/Filial, 2: Equipamento, 3: Atendimento)
   const [currentStep, setCurrentStep] = useState<number>(() => {
-    if (preselectedEquipment && preselectedStore) return 4;
-    if (preselectedStore) return 3;
+    if (preselectedEquipment && (preselectedBranch || preselectedStore)) return 3;
+    if (preselectedBranch || preselectedStore) return 2;
     return 1;
   });
 
-  // Selected entities
-  const [selectedClientId, setSelectedClientId] = useState<string>(() => {
-    if (preselectedStore) return preselectedStore.clienteId;
-    if (preselectedEquipment?.clienteId) return preselectedEquipment.clienteId;
-    return clients[0]?.id || '';
-  });
-
-  const [selectedStoreId, setSelectedStoreId] = useState<string>(() => {
-    if (preselectedStore) return preselectedStore.id;
+  // Selected Branch (Matriz ou Filial da aba Lojas)
+  const [selectedBranchId, setSelectedBranchId] = useState<string>(() => {
+    if (preselectedBranch?.id) return preselectedBranch.id;
+    if (preselectedStore?.id) return preselectedStore.id;
     if (preselectedEquipment?.lojaId) return preselectedEquipment.lojaId;
-    return '';
+    return branches[0]?.id || '';
   });
 
   const [selectedEquipmentId, setSelectedEquipmentId] = useState<string>(() => {
@@ -76,9 +74,9 @@ export const ServiceOrderFastModal: React.FC<ServiceOrderFastModalProps> = ({
 
   const [isWithoutEquipment, setIsWithoutEquipment] = useState<boolean>(false);
 
-  // Search terms in wizard
-  const [clientSearch, setClientSearch] = useState('');
-  const [storeSearch, setStoreSearch] = useState('');
+  // Search and filter terms in wizard
+  const [branchSearch, setBranchSearch] = useState('');
+  const [branchFilterType, setBranchFilterType] = useState<'TODAS' | 'MATRIZ' | 'FILIAL'>('TODAS');
   const [equipmentSearch, setEquipmentSearch] = useState('');
 
   // Inline "Novo Equipamento" Drawer State
@@ -91,7 +89,7 @@ export const ServiceOrderFastModal: React.FC<ServiceOrderFastModalProps> = ({
   const [newEqSerial, setNewEqSerial] = useState('');
   const [newEqIp, setNewEqIp] = useState('');
 
-  // Step 4 Service Order Form State
+  // Step 3 Service Order Form State
   const [tecnicoResponsavel, setTecnicoResponsavel] = useState('Carlos Silva');
   const [categoriaAtendimento, setCategoriaAtendimento] = useState('PDV & Frente de Caixa');
   const [tipoServico, setTipoServico] = useState<ServiceOrderType>('corretivo');
@@ -106,45 +104,44 @@ export const ServiceOrderFastModal: React.FC<ServiceOrderFastModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Selected Entities Objects
-  const selectedClient = clients.find((c) => c.id === selectedClientId);
-  const selectedStore = stores.find((s) => s.id === selectedStoreId);
+  // Selected Branch Object from Aba Lojas
+  const selectedBranch: BranchUnit | undefined =
+    branches.find((b) => b.id === selectedBranchId) ||
+    branches.find((b) => b.nomeFantasia === preselectedStore?.nome) ||
+    branches[0];
+
   const selectedEquipment = equipments.find((e) => e.id === selectedEquipmentId);
 
-  // Filtered Clients (Step 1)
-  const filteredClients = clients.filter((c) => {
-    if (!clientSearch.trim()) return true;
-    const lower = clientSearch.toLowerCase();
+  // Filtered Branches from Aba Lojas (Step 1)
+  const filteredBranches = branches.filter((b) => {
+    if (branchFilterType !== 'TODAS' && b.tipo !== branchFilterType) {
+      return false;
+    }
+    if (!branchSearch.trim()) return true;
+    const lower = branchSearch.toLowerCase();
     return (
-      c.razaoSocial.toLowerCase().includes(lower) ||
-      (c.nomeFantasia && c.nomeFantasia.toLowerCase().includes(lower)) ||
-      (c.codigo && c.codigo.toLowerCase().includes(lower)) ||
-      (c.cnpj && c.cnpj.includes(lower))
+      b.nomeFantasia.toLowerCase().includes(lower) ||
+      b.razaoSocial.toLowerCase().includes(lower) ||
+      b.idOriginal.toLowerCase().includes(lower) ||
+      b.municipio.toLowerCase().includes(lower) ||
+      b.endereco.toLowerCase().includes(lower) ||
+      (b.cnpj && b.cnpj.includes(lower))
     );
   });
 
-  // Filtered Stores for Selected Client (Step 2)
-  const availableStores = stores.filter((s) => s.clienteId === selectedClientId);
-  const filteredStores = availableStores.filter((s) => {
-    if (!storeSearch.trim()) return true;
-    const lower = storeSearch.toLowerCase();
+  // Filtered Equipments for Selected Branch (Step 2)
+  const branchEquipments = equipments.filter((e) => {
+    if (!selectedBranch) return false;
     return (
-      s.nome.toLowerCase().includes(lower) ||
-      s.codigoLoja.toLowerCase().includes(lower) ||
-      s.cidade.toLowerCase().includes(lower) ||
-      s.endereco.toLowerCase().includes(lower)
+      e.lojaId === selectedBranch.id ||
+      (e.lojaNome && e.lojaNome.toLowerCase() === selectedBranch.nomeFantasia.toLowerCase()) ||
+      (e.lojaOrigem && e.lojaOrigem.toLowerCase() === selectedBranch.nomeFantasia.toLowerCase()) ||
+      (e.lojaNome && e.lojaNome.includes(`Loja ${selectedBranch.idOriginal}`)) ||
+      (e.lojaOrigem && e.lojaOrigem.includes(`Loja ${selectedBranch.idOriginal}`))
     );
   });
 
-  // Filtered Equipments for Selected Store (Step 3)
-  const storeEquipments = equipments.filter(
-    (e) =>
-      e.lojaId === selectedStoreId ||
-      (selectedStore && e.lojaNome && e.lojaNome.toLowerCase() === selectedStore.nome.toLowerCase()) ||
-      (selectedStore && e.lojaOrigem && e.lojaOrigem.toLowerCase() === selectedStore.nome.toLowerCase())
-  );
-
-  const filteredEquipments = storeEquipments.filter((e) => {
+  const filteredEquipments = branchEquipments.filter((e) => {
     if (!equipmentSearch.trim()) return true;
     const lower = equipmentSearch.toLowerCase();
     return (
@@ -157,17 +154,17 @@ export const ServiceOrderFastModal: React.FC<ServiceOrderFastModalProps> = ({
     );
   });
 
-  // Previous Orders for Selected Equipment (Item 6 do prompt)
+  // Previous Orders for Selected Equipment
   const previousOrders = selectedEquipmentId ? getOrdersByEquipmentId(selectedEquipmentId) : [];
 
-  // Handle saving new equipment directly during opening (Item 5 & 8 do prompt)
+  // Handle saving new equipment directly during opening
   const handleSaveInlineEquipment = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newEqNome.trim() || !selectedStore) return;
+    if (!newEqNome.trim() || !selectedBranch) return;
 
     const res = addEquipment({
       nome: newEqNome.trim(),
-      patrimonio: '', // auto-generated
+      patrimonio: '',
       tipo: newEqTipo,
       marca: newEqMarca.trim() || undefined,
       modelo: newEqModelo.trim() || undefined,
@@ -175,11 +172,11 @@ export const ServiceOrderFastModal: React.FC<ServiceOrderFastModalProps> = ({
       numeroSerie: newEqSerial.trim() || undefined,
       enderecoIp: newEqIp.trim() || undefined,
       posicaoCaixa: newEqPosicao.trim() || undefined,
-      clienteId: selectedStore.clienteId,
-      clienteNome: selectedStore.clienteNome,
-      lojaId: selectedStore.id,
-      lojaNome: selectedStore.nome,
-      lojaOrigem: selectedStore.nome,
+      clienteId: selectedBranch.id,
+      clienteNome: selectedBranch.tipo === 'MATRIZ' ? selectedBranch.nomeFantasia : 'Mark Security',
+      lojaId: selectedBranch.id,
+      lojaNome: selectedBranch.nomeFantasia,
+      lojaOrigem: selectedBranch.nomeFantasia,
       localizacaoAtual: 'LOJA',
       status: 'EM_USO',
       dataPrimeiroCadastro: new Date().toISOString().split('T')[0],
@@ -191,8 +188,7 @@ export const ServiceOrderFastModal: React.FC<ServiceOrderFastModalProps> = ({
       setIsWithoutEquipment(false);
       setShowInlineNewEquipment(false);
       setFormError(null);
-      // Auto advance to step 4
-      setCurrentStep(4);
+      setCurrentStep(3);
     } else {
       setFormError(res.error || 'Erro ao cadastrar equipamento');
     }
@@ -205,19 +201,23 @@ export const ServiceOrderFastModal: React.FC<ServiceOrderFastModalProps> = ({
       setFormError('Por favor, informe a descrição do problema relatado.');
       return;
     }
+    if (!selectedBranch) {
+      setFormError('Selecione uma filial ou matriz cadastrada.');
+      return;
+    }
     setFormError(null);
 
     const machineIdent = isWithoutEquipment
-      ? `Infraestrutura / Rede — ${selectedStore?.nome || 'Loja'}`
+      ? `Infraestrutura / Rede — ${selectedBranch.nomeFantasia}`
       : selectedEquipment?.nome || 'Equipamento TI';
 
     const newOs = addOrder({
-      clienteId: selectedClient?.id,
-      clienteNome: selectedClient?.nomeFantasia || selectedClient?.razaoSocial,
-      lojaId: selectedStore?.id,
-      lojaNome: selectedStore?.nome,
-      lojaOrigem: selectedStore?.nome || 'Loja',
-      lojaDestino: selectedStore?.nome,
+      clienteId: selectedBranch.tipo === 'MATRIZ' ? selectedBranch.id : (selectedBranch.matrizVinculadaId || 'branch_ptn_matriz'),
+      clienteNome: selectedBranch.tipo === 'MATRIZ' ? selectedBranch.nomeFantasia : 'Mark Security',
+      lojaId: selectedBranch.id,
+      lojaNome: selectedBranch.nomeFantasia,
+      lojaOrigem: selectedBranch.nomeFantasia,
+      lojaDestino: selectedBranch.nomeFantasia,
       equipamentoId: isWithoutEquipment ? undefined : selectedEquipment?.id,
       equipamentoNome: isWithoutEquipment ? undefined : selectedEquipment?.nome,
       semEquipamento: isWithoutEquipment,
@@ -275,7 +275,7 @@ export const ServiceOrderFastModal: React.FC<ServiceOrderFastModalProps> = ({
           </button>
         </div>
 
-        {/* 4-Step Navigation Indicator */}
+        {/* 3-Step Navigation Indicator */}
         <div className="bg-slate-100/90 px-4 py-2.5 border-b border-slate-200 shrink-0">
           <div className="flex items-center justify-between max-w-lg mx-auto text-xs font-bold">
             <button
@@ -289,19 +289,25 @@ export const ServiceOrderFastModal: React.FC<ServiceOrderFastModalProps> = ({
                   : 'text-slate-400'
               }`}
             >
-              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${
-                currentStep === 1 ? 'bg-blue-600 text-white' : currentStep > 1 ? 'bg-emerald-600 text-white' : 'bg-slate-300 text-slate-700'
-              }`}>
+              <span
+                className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${
+                  currentStep === 1
+                    ? 'bg-blue-600 text-white'
+                    : currentStep > 1
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-slate-300 text-slate-700'
+                }`}
+              >
                 1
               </span>
-              <span className="hidden sm:inline">Cliente</span>
+              <span>1. Matriz / Filial</span>
             </button>
 
             <span className="text-slate-300">➔</span>
 
             <button
               type="button"
-              disabled={!selectedClientId}
+              disabled={!selectedBranchId}
               onClick={() => setCurrentStep(2)}
               className={`flex items-center gap-1.5 transition-all cursor-pointer ${
                 currentStep === 2
@@ -311,52 +317,38 @@ export const ServiceOrderFastModal: React.FC<ServiceOrderFastModalProps> = ({
                   : 'text-slate-400'
               }`}
             >
-              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${
-                currentStep === 2 ? 'bg-blue-600 text-white' : currentStep > 2 ? 'bg-emerald-600 text-white' : 'bg-slate-300 text-slate-700'
-              }`}>
+              <span
+                className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${
+                  currentStep === 2
+                    ? 'bg-blue-600 text-white'
+                    : currentStep > 2
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-slate-300 text-slate-700'
+                }`}
+              >
                 2
               </span>
-              <span className="hidden sm:inline">Loja</span>
+              <span>2. Equipamento</span>
             </button>
 
             <span className="text-slate-300">➔</span>
 
             <button
               type="button"
-              disabled={!selectedStoreId}
+              disabled={!selectedBranchId}
               onClick={() => setCurrentStep(3)}
               className={`flex items-center gap-1.5 transition-all cursor-pointer ${
-                currentStep === 3
-                  ? 'text-blue-700 font-extrabold'
-                  : currentStep > 3
-                  ? 'text-emerald-700'
-                  : 'text-slate-400'
+                currentStep === 3 ? 'text-blue-700 font-extrabold' : 'text-slate-400'
               }`}
             >
-              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${
-                currentStep === 3 ? 'bg-blue-600 text-white' : currentStep > 3 ? 'bg-emerald-600 text-white' : 'bg-slate-300 text-slate-700'
-              }`}>
+              <span
+                className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${
+                  currentStep === 3 ? 'bg-blue-600 text-white' : 'bg-slate-300 text-slate-700'
+                }`}
+              >
                 3
               </span>
-              <span className="hidden sm:inline">Equipamento</span>
-            </button>
-
-            <span className="text-slate-300">➔</span>
-
-            <button
-              type="button"
-              disabled={!selectedStoreId}
-              onClick={() => setCurrentStep(4)}
-              className={`flex items-center gap-1.5 transition-all cursor-pointer ${
-                currentStep === 4 ? 'text-blue-700 font-extrabold' : 'text-slate-400'
-              }`}
-            >
-              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${
-                currentStep === 4 ? 'bg-blue-600 text-white' : 'bg-slate-300 text-slate-700'
-              }`}>
-                4
-              </span>
-              <span className="hidden sm:inline">Atendimento</span>
+              <span>3. Atendimento</span>
             </button>
           </div>
         </div>
@@ -369,7 +361,7 @@ export const ServiceOrderFastModal: React.FC<ServiceOrderFastModalProps> = ({
               <button
                 type="button"
                 onClick={() => setFormError(null)}
-                className="text-red-500 hover:text-red-800 font-bold ml-2"
+                className="text-red-500 hover:text-red-800 font-bold ml-2 cursor-pointer"
               >
                 ✕
               </button>
@@ -377,103 +369,55 @@ export const ServiceOrderFastModal: React.FC<ServiceOrderFastModalProps> = ({
           )}
 
           {/* =============================================================== */}
-          {/* ETAPA 1 — Selecionar o Cliente (Matriz) */}
+          {/* ETAPA 1 — Selecionar a Matriz ou Filial (da aba Lojas) */}
           {/* =============================================================== */}
           {currentStep === 1 && (
             <div className="space-y-4 animate-in fade-in duration-150">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900">Etapa 1 — Selecione o Cliente Matriz</h3>
-                  <p className="text-slate-500">Escolha a empresa ou rede atendida para carregar as filiais vinculadas.</p>
-                </div>
-              </div>
-
-              {/* Search box */}
-              <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  placeholder="Pesquisar por nome ou código do cliente..."
-                  value={clientSearch}
-                  onChange={(e) => setClientSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-              </div>
-
-              {/* Clients list */}
-              <div className="space-y-2 max-h-72 overflow-y-auto">
-                {filteredClients.map((client) => {
-                  const isSelected = selectedClientId === client.id;
-                  const clientStoreCount = stores.filter((s) => s.clienteId === client.id).length;
-
-                  return (
-                    <div
-                      key={client.id}
-                      onClick={() => {
-                        setSelectedClientId(client.id);
-                        // Auto clear store if changing client
-                        if (selectedStore?.clienteId !== client.id) {
-                          setSelectedStoreId('');
-                          setSelectedEquipmentId('');
-                        }
-                      }}
-                      className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
-                        isSelected
-                          ? 'bg-blue-50/90 border-blue-500 ring-1 ring-blue-400'
-                          : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-xl ${isSelected ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
-                          <Building2 className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <div className="font-bold text-slate-900 text-sm">
-                            {client.nomeFantasia || client.razaoSocial}
-                          </div>
-                          <div className="text-[11px] text-slate-500 flex items-center gap-2 mt-0.5">
-                            <span className="font-mono font-bold text-slate-700 bg-slate-100 px-1.5 py-0.2 rounded">
-                              {client.codigo}
-                            </span>
-                            {client.cnpj && <span>CNPJ: {client.cnpj}</span>}
-                            <span>• {clientStoreCount} loja(s) vinculada(s)</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {isSelected && (
-                        <CheckCircle2 className="w-5 h-5 text-blue-600 shrink-0" />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="pt-3 border-t border-slate-200 flex items-center justify-end">
-                <button
-                  type="button"
-                  disabled={!selectedClientId}
-                  onClick={() => setCurrentStep(2)}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-bold rounded-xl shadow-sm transition-all cursor-pointer"
-                >
-                  <span>Avançar para Loja</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* =============================================================== */}
-          {/* ETAPA 2 — Selecionar a Loja / Filial */}
-          {/* =============================================================== */}
-          {currentStep === 2 && (
-            <div className="space-y-4 animate-in fade-in duration-150">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                   <h3 className="text-sm font-bold text-slate-900">
-                    Etapa 2 — Selecione a Loja de {selectedClient?.nomeFantasia || selectedClient?.razaoSocial}
+                    Etapa 1 — Selecione a Matriz ou Filial
                   </h3>
-                  <p className="text-slate-500">Exibindo apenas lojas vinculadas ao cliente selecionado.</p>
+                  <p className="text-slate-500">
+                    Selecione a unidade cadastrada na aba Lojas para direcionar o atendimento técnico.
+                  </p>
+                </div>
+
+                {/* Filter Tabs: TODAS, MATRIZ, FILIAIS */}
+                <div className="flex items-center bg-slate-100 p-1 rounded-xl self-start sm:self-auto border border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => setBranchFilterType('TODAS')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      branchFilterType === 'TODAS'
+                        ? 'bg-white text-blue-700 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Todas ({branches.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBranchFilterType('MATRIZ')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      branchFilterType === 'MATRIZ'
+                        ? 'bg-white text-amber-700 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    🏢 Matriz ({matriz ? 1 : 0})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBranchFilterType('FILIAL')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      branchFilterType === 'FILIAL'
+                        ? 'bg-white text-blue-700 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    🏬 Filiais ({filiais.length})
+                  </button>
                 </div>
               </div>
 
@@ -482,60 +426,98 @@ export const ServiceOrderFastModal: React.FC<ServiceOrderFastModalProps> = ({
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Pesquisar por nome, número da loja ou cidade..."
-                  value={storeSearch}
-                  onChange={(e) => setStoreSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="Pesquisar por código (ex: 01, 02), nome da loja, município ou endereço..."
+                  value={branchSearch}
+                  onChange={(e) => setBranchSearch(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-xs"
                 />
               </div>
 
-              {/* Stores list */}
-              <div className="space-y-2 max-h-72 overflow-y-auto">
-                {filteredStores.length === 0 ? (
-                  <div className="p-6 text-center text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-300">
-                    Nenhuma loja cadastrada para este cliente.
+              {/* Branches list */}
+              <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+                {filteredBranches.length === 0 ? (
+                  <div className="p-8 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                    Nenhuma unidade encontrada para esta pesquisa.
                   </div>
                 ) : (
-                  filteredStores.map((store) => {
-                    const isSelected = selectedStoreId === store.id;
+                  filteredBranches.map((branch) => {
+                    const isSelected = selectedBranchId === branch.id;
                     const eqCount = equipments.filter(
-                      (e) => e.lojaId === store.id || (e.lojaNome && e.lojaNome.toLowerCase() === store.nome.toLowerCase())
+                      (e) =>
+                        e.lojaId === branch.id ||
+                        (e.lojaNome && e.lojaNome.toLowerCase() === branch.nomeFantasia.toLowerCase()) ||
+                        (e.lojaOrigem && e.lojaOrigem.toLowerCase() === branch.nomeFantasia.toLowerCase()) ||
+                        (e.lojaNome && e.lojaNome.includes(`Loja ${branch.idOriginal}`))
                     ).length;
 
                     return (
                       <div
-                        key={store.id}
+                        key={branch.id}
                         onClick={() => {
-                          setSelectedStoreId(store.id);
+                          setSelectedBranchId(branch.id);
                           setSelectedEquipmentId('');
+                          setIsWithoutEquipment(false);
                         }}
                         className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-start justify-between gap-3 ${
                           isSelected
-                            ? 'bg-blue-50/90 border-blue-500 ring-1 ring-blue-400'
+                            ? 'bg-blue-50/90 border-blue-500 ring-2 ring-blue-400 shadow-xs'
                             : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                         }`}
                       >
                         <div className="flex items-start gap-3">
-                          <div className={`p-2 rounded-xl mt-0.5 ${isSelected ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
-                            <StoreIcon className="w-5 h-5" />
+                          <div
+                            className={`p-2 rounded-xl mt-0.5 shrink-0 ${
+                              branch.tipo === 'MATRIZ'
+                                ? 'bg-amber-100 text-amber-800'
+                                : isSelected
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-slate-100 text-slate-700'
+                            }`}
+                          >
+                            {branch.tipo === 'MATRIZ' ? (
+                              <Building2 className="w-5 h-5" />
+                            ) : (
+                              <StoreIcon className="w-5 h-5" />
+                            )}
                           </div>
+
                           <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-slate-900 text-sm">{store.nome}</span>
-                              <span className="font-mono text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-700">
-                                Cód: {store.codigoLoja}
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span
+                                className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${
+                                  branch.tipo === 'MATRIZ'
+                                    ? 'bg-amber-500 text-slate-950'
+                                    : 'bg-blue-100 text-blue-800 font-mono'
+                                }`}
+                              >
+                                {branch.tipo === 'MATRIZ' ? 'MATRIZ' : `FILIAL ${branch.idOriginal}`}
+                              </span>
+                              <span className="font-extrabold text-slate-900 text-sm">
+                                {branch.nomeFantasia}
                               </span>
                             </div>
 
                             <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-1">
                               <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-                              <span>{store.endereco}, {store.cidade} - {store.estado}</span>
+                              <span>
+                                {branch.endereco}, {branch.municipio} - {branch.uf}
+                              </span>
                             </div>
 
-                            <div className="text-[11px] text-slate-600 flex items-center gap-3 mt-1.5">
-                              {store.responsavelLocal && <span>Resp: <strong>{store.responsavelLocal}</strong></span>}
-                              {store.telefone && <span>Tel: <strong>{store.telefone}</strong></span>}
-                              <span className="text-blue-700 font-bold">• {eqCount} equipamentos cadastrados</span>
+                            <div className="text-[11px] text-slate-600 flex items-center gap-3 mt-1.5 flex-wrap">
+                              {branch.responsavelLocal && (
+                                <span>
+                                  Resp: <strong>{branch.responsavelLocal}</strong>
+                                </span>
+                              )}
+                              {branch.telefone && (
+                                <span>
+                                  Tel: <strong>{branch.telefone}</strong>
+                                </span>
+                              )}
+                              <span className="text-blue-700 font-bold">
+                                • {eqCount} equipamentos cadastrados
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -550,18 +532,18 @@ export const ServiceOrderFastModal: React.FC<ServiceOrderFastModalProps> = ({
               </div>
 
               <div className="pt-3 border-t border-slate-200 flex items-center justify-between">
+                <div className="text-xs text-slate-500">
+                  {selectedBranch && (
+                    <span>
+                      Selecionada: <b className="text-slate-900">{selectedBranch.nomeFantasia}</b>
+                    </span>
+                  )}
+                </div>
+
                 <button
                   type="button"
-                  onClick={() => setCurrentStep(1)}
-                  className="flex items-center gap-1.5 px-4 py-2 border border-slate-300 rounded-xl font-bold text-slate-700 hover:bg-slate-100 cursor-pointer"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>Voltar</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={!selectedStoreId}
-                  onClick={() => setCurrentStep(3)}
+                  disabled={!selectedBranchId}
+                  onClick={() => setCurrentStep(2)}
                   className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-bold rounded-xl shadow-sm transition-all cursor-pointer"
                 >
                   <span>Avançar para Equipamento</span>
@@ -572,17 +554,46 @@ export const ServiceOrderFastModal: React.FC<ServiceOrderFastModalProps> = ({
           )}
 
           {/* =============================================================== */}
-          {/* ETAPA 3 — Selecionar o Equipamento (+ Novo Equipamento / Sem Equipamento) */}
+          {/* ETAPA 2 — Selecionar o Equipamento (+ Novo / Sem Equipamento) */}
           {/* =============================================================== */}
-          {currentStep === 3 && (
+          {currentStep === 2 && (
             <div className="space-y-4 animate-in fade-in duration-150">
+              {/* Selected Branch Banner */}
+              <div className="p-3 bg-blue-50/80 rounded-xl border border-blue-200 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 bg-blue-600 text-white rounded-lg">
+                    {selectedBranch?.tipo === 'MATRIZ' ? (
+                      <Building2 className="w-4 h-4" />
+                    ) : (
+                      <StoreIcon className="w-4 h-4" />
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-[10px] uppercase font-bold text-blue-700">
+                      Unidade Selecionada (Aba Lojas)
+                    </div>
+                    <div className="font-bold text-xs text-slate-900">
+                      {selectedBranch?.nomeFantasia}
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep(1)}
+                  className="text-xs font-bold text-blue-600 hover:underline cursor-pointer"
+                >
+                  Trocar Loja
+                </button>
+              </div>
+
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                   <h3 className="text-sm font-bold text-slate-900">
-                    Etapa 3 — Selecione o Equipamento de {selectedStore?.nome}
+                    Etapa 2 — Selecione o Equipamento
                   </h3>
                   <p className="text-slate-500">
-                    Escolha a máquina cadastrada, registre um novo equipamento na hora ou abra OS sem equipamento.
+                    Escolha uma máquina desta unidade, abra OS de infraestrutura ou registre um novo equipamento.
                   </p>
                 </div>
 
@@ -596,7 +607,7 @@ export const ServiceOrderFastModal: React.FC<ServiceOrderFastModalProps> = ({
                 </button>
               </div>
 
-              {/* Option: Atendimento sem equipamento (Rede / Infra / Manutenção Geral) */}
+              {/* Option: Atendimento sem equipamento (Rede / Infra / Geral) */}
               <div
                 onClick={() => {
                   setIsWithoutEquipment(true);
@@ -605,20 +616,24 @@ export const ServiceOrderFastModal: React.FC<ServiceOrderFastModalProps> = ({
                 }}
                 className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
                   isWithoutEquipment
-                    ? 'bg-amber-50/90 border-amber-500 ring-1 ring-amber-400'
+                    ? 'bg-amber-50/90 border-amber-500 ring-2 ring-amber-400'
                     : 'bg-white border-slate-200 hover:border-amber-300 hover:bg-amber-50/40'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-xl ${isWithoutEquipment ? 'bg-amber-600 text-white' : 'bg-amber-100 text-amber-700'}`}>
+                  <div
+                    className={`p-2 rounded-xl ${
+                      isWithoutEquipment ? 'bg-amber-600 text-white' : 'bg-amber-100 text-amber-700'
+                    }`}
+                  >
                     <Network className="w-5 h-5" />
                   </div>
                   <div>
                     <div className="font-bold text-slate-900 text-xs sm:text-sm">
-                      Atendimento sem equipamento específico
+                      Atendimento sem equipamento físico específico
                     </div>
                     <div className="text-[11px] text-slate-500">
-                      Problemas de rede, internet, cabeamento estruturado, infraestrutura ou manutenção geral da loja.
+                      Problemas de internet, link de contingência Claro, cabeamento estruturado, infraestrutura ou manutenção geral desta unidade.
                     </div>
                   </div>
                 </div>
@@ -628,7 +643,7 @@ export const ServiceOrderFastModal: React.FC<ServiceOrderFastModalProps> = ({
                 )}
               </div>
 
-              {/* Compact Inline Form: Cadastrar Novo Equipamento diretamente na OS */}
+              {/* Compact Inline Form: Cadastrar Novo Equipamento */}
               {showInlineNewEquipment && (
                 <form
                   onSubmit={handleSaveInlineEquipment}
@@ -637,12 +652,12 @@ export const ServiceOrderFastModal: React.FC<ServiceOrderFastModalProps> = ({
                   <div className="flex items-center justify-between pb-1 border-b border-emerald-200">
                     <span className="font-extrabold text-emerald-900 text-xs flex items-center gap-1.5">
                       <Sparkles className="w-4 h-4 text-emerald-600" />
-                      Cadastrar Equipamento e Vincular a esta OS
+                      Cadastrar Equipamento em {selectedBranch?.nomeFantasia}
                     </span>
                     <button
                       type="button"
                       onClick={() => setShowInlineNewEquipment(false)}
-                      className="text-slate-400 hover:text-slate-600"
+                      className="text-slate-400 hover:text-slate-600 cursor-pointer"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -654,8 +669,10 @@ export const ServiceOrderFastModal: React.FC<ServiceOrderFastModalProps> = ({
                         key={t}
                         type="button"
                         onClick={() => setNewEqTipo(t)}
-                        className={`py-1 px-1.5 rounded-lg text-center text-[11px] ${
-                          newEqTipo === t ? 'bg-emerald-700 text-white' : 'bg-white text-slate-700 border border-slate-200'
+                        className={`py-1 px-1.5 rounded-lg text-center text-[11px] cursor-pointer ${
+                          newEqTipo === t
+                            ? 'bg-emerald-700 text-white'
+                            : 'bg-white text-slate-700 border border-slate-200'
                         }`}
                       >
                         {t}
@@ -669,17 +686,17 @@ export const ServiceOrderFastModal: React.FC<ServiceOrderFastModalProps> = ({
                       <input
                         type="text"
                         required
-                        placeholder="Ex: PDV 03, Impressora Caixa 02"
+                        placeholder="Ex: PDV 04, Impressora Caixa 02"
                         value={newEqNome}
                         onChange={(e) => setNewEqNome(e.target.value)}
                         className="w-full p-2 rounded-lg border border-slate-300 bg-white"
                       />
                     </div>
                     <div>
-                      <label className="block font-bold text-slate-700 mb-0.5">Posição / Caixa</label>
+                      <label className="block font-bold text-slate-700 mb-0.5">Posição / Setor</label>
                       <input
                         type="text"
-                        placeholder="Ex: Caixa 03, Balcão Frios"
+                        placeholder="Ex: Caixa 02, Balcão de Frios"
                         value={newEqPosicao}
                         onChange={(e) => setNewEqPosicao(e.target.value)}
                         className="w-full p-2 rounded-lg border border-slate-300 bg-white"
@@ -702,35 +719,35 @@ export const ServiceOrderFastModal: React.FC<ServiceOrderFastModalProps> = ({
                       <label className="block font-bold text-slate-700 mb-0.5">Modelo</label>
                       <input
                         type="text"
-                        placeholder="Ex: OptiPlex, Prix 5"
+                        placeholder="Ex: OptiPlex 3050"
                         value={newEqModelo}
                         onChange={(e) => setNewEqModelo(e.target.value)}
                         className="w-full p-2 rounded-lg border border-slate-300 bg-white"
                       />
                     </div>
                     <div>
-                      <label className="block font-bold text-slate-700 mb-0.5">Número de Série (se houver)</label>
+                      <label className="block font-bold text-slate-700 mb-0.5">Nº de Série</label>
                       <input
                         type="text"
-                        placeholder="Service Tag / Serial"
+                        placeholder="Ex: BRJ9045-DEL"
                         value={newEqSerial}
                         onChange={(e) => setNewEqSerial(e.target.value)}
-                        className="w-full p-2 rounded-lg border border-slate-300 bg-white font-mono"
+                        className="w-full p-2 rounded-lg border border-slate-300 bg-white"
                       />
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-end gap-2 pt-1">
+                  <div className="flex justify-end gap-2 pt-2 border-t border-emerald-200">
                     <button
                       type="button"
                       onClick={() => setShowInlineNewEquipment(false)}
-                      className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 font-bold text-xs"
+                      className="px-3 py-1.5 rounded-lg text-slate-600 hover:bg-slate-100 font-bold"
                     >
                       Cancelar
                     </button>
                     <button
                       type="submit"
-                      className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-xs"
+                      className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-xs cursor-pointer"
                     >
                       Salvar e Selecionar
                     </button>
@@ -738,23 +755,23 @@ export const ServiceOrderFastModal: React.FC<ServiceOrderFastModalProps> = ({
                 </form>
               )}
 
-              {/* Equipments search in this store */}
+              {/* Search box for equipments */}
               <div className="relative">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Pesquisar equipamento pelo código, nome, número do caixa, marca ou modelo..."
+                  placeholder="Pesquisar máquina por nome, patrimônio, posição ou serial..."
                   value={equipmentSearch}
                   onChange={(e) => setEquipmentSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-xs"
                 />
               </div>
 
-              {/* Equipments list in store */}
-              <div className="space-y-2 max-h-60 overflow-y-auto">
+              {/* Equipments list */}
+              <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
                 {filteredEquipments.length === 0 ? (
-                  <div className="p-5 text-center text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-300">
-                    Nenhum equipamento encontrado nesta loja com este termo.
+                  <div className="p-6 text-center text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                    Nenhum equipamento cadastrado ainda nesta unidade. Você pode cadastrar um no botão acima ou selecionar a opção de atendimento sem equipamento.
                   </div>
                 ) : (
                   filteredEquipments.map((eq) => {
@@ -770,31 +787,52 @@ export const ServiceOrderFastModal: React.FC<ServiceOrderFastModalProps> = ({
                         }}
                         className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
                           isSelected
-                            ? 'bg-blue-50/90 border-blue-500 ring-1 ring-blue-400'
+                            ? 'bg-blue-50/90 border-blue-500 ring-2 ring-blue-400 shadow-xs'
                             : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                         }`}
                       >
                         <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-xl ${isSelected ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
-                            <Laptop className="w-4 h-4" />
+                          <div
+                            className={`p-2 rounded-xl ${
+                              isSelected ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700'
+                            }`}
+                          >
+                            {eq.tipo === 'PDV' || eq.tipo === 'COMPUTADOR' ? (
+                              <Laptop className="w-4 h-4" />
+                            ) : eq.tipo === 'IMPRESSORA' ? (
+                              <Printer className="w-4 h-4" />
+                            ) : eq.tipo === 'BALANCA' ? (
+                              <Scale className="w-4 h-4" />
+                            ) : eq.tipo === 'DVR' ? (
+                              <Video className="w-4 h-4" />
+                            ) : eq.tipo === 'ROTEADOR' ? (
+                              <Router className="w-4 h-4" />
+                            ) : eq.tipo === 'SWITCH' ? (
+                              <Network className="w-4 h-4" />
+                            ) : (
+                              <Server className="w-4 h-4" />
+                            )}
                           </div>
+
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="font-bold text-slate-900 text-xs sm:text-sm">{eq.nome}</span>
-                              <span className="font-mono text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-700">
-                                {eq.patrimonio}
+                              <span className="font-bold text-slate-900 text-xs sm:text-sm">
+                                {eq.nome}
                               </span>
-                              {eq.posicaoCaixa && (
-                                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-blue-100 text-blue-800">
-                                  {eq.posicaoCaixa}
+                              <span className="font-mono text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-700">
+                                {eq.tipo}
+                              </span>
+                              {eq.patrimonio && (
+                                <span className="font-mono text-[10px] text-blue-700 bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200/50">
+                                  {eq.patrimonio}
                                 </span>
                               )}
                             </div>
 
                             <div className="text-[11px] text-slate-500 flex items-center gap-2 mt-0.5">
-                              <span>{eq.marcaModelo || eq.tipo}</span>
-                              {eq.numeroSerie && <span>• Serial: <strong className="font-mono">{eq.numeroSerie}</strong></span>}
-                              {eq.enderecoIp && <span>• IP: <strong className="font-mono">{eq.enderecoIp}</strong></span>}
+                              {eq.posicaoCaixa && <span>Posição: {eq.posicaoCaixa}</span>}
+                              {eq.marcaModelo && <span>• {eq.marcaModelo}</span>}
+                              {eq.numeroSerie && <span>• SN: {eq.numeroSerie}</span>}
                             </div>
                           </div>
                         </div>
@@ -808,48 +846,245 @@ export const ServiceOrderFastModal: React.FC<ServiceOrderFastModalProps> = ({
                 )}
               </div>
 
-              {/* Item 6 do prompt: Exibir histórico anterior do equipamento selecionado */}
-              {selectedEquipment && !isWithoutEquipment && (
-                <div className="p-3.5 bg-blue-50/60 rounded-xl border border-blue-200 space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold text-blue-900 flex items-center gap-1.5">
-                      <History className="w-4 h-4 text-blue-600" />
-                      Histórico Anterior de Atendimentos ({previousOrders.length})
-                    </span>
-                    {previousOrders.length > 0 && (
-                      <span className="text-[11px] text-blue-700 font-semibold">
-                        Último em: {formatDateBR(previousOrders[0].dataEntrada)}
-                      </span>
-                    )}
-                  </div>
+              <div className="pt-3 border-t border-slate-200 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep(1)}
+                  className="flex items-center gap-1.5 px-4 py-2 border border-slate-300 rounded-xl font-bold text-slate-700 hover:bg-slate-100 cursor-pointer"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Voltar para Loja</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={!selectedEquipmentId && !isWithoutEquipment}
+                  onClick={() => setCurrentStep(3)}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-bold rounded-xl shadow-sm transition-all cursor-pointer"
+                >
+                  <span>Avançar para Atendimento</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
 
-                  {previousOrders.length === 0 ? (
-                    <div className="text-[11px] text-slate-500 italic">
-                      Primeiro atendimento registrado para este equipamento no sistema.
+          {/* =============================================================== */}
+          {/* ETAPA 3 — Formulário de Atendimento e Defeito Relatado */}
+          {/* =============================================================== */}
+          {currentStep === 3 && (
+            <form onSubmit={handleFinalSubmit} className="space-y-4 animate-in fade-in duration-150">
+              {/* Summary Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {/* Branch Card */}
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 bg-blue-600 text-white rounded-lg">
+                      {selectedBranch?.tipo === 'MATRIZ' ? (
+                        <Building2 className="w-4 h-4" />
+                      ) : (
+                        <StoreIcon className="w-4 h-4" />
+                      )}
                     </div>
-                  ) : (
-                    <div className="space-y-1.5 max-h-32 overflow-y-auto">
-                      {previousOrders.slice(0, 3).map((oldOs) => (
-                        <div key={oldOs.id} className="p-2 rounded-lg bg-white border border-blue-100 text-[11px] space-y-0.5">
-                          <div className="flex items-center justify-between font-bold">
-                            <span className="text-blue-700 font-mono">{oldOs.numeroOs}</span>
-                            <span className="text-slate-500">{formatDateBR(oldOs.dataEntrada)} • {oldOs.tecnicoResponsavel}</span>
-                          </div>
-                          <div className="text-slate-800">
-                            <strong>Problema:</strong> {oldOs.defeitoRelatado}
-                          </div>
-                          {(oldOs.solucaoAplicada || oldOs.servicosExecutados) && (
-                            <div className="text-emerald-800 font-medium">
-                              <strong>Solução:</strong> {oldOs.solucaoAplicada || oldOs.servicosExecutados}
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                    <div>
+                      <div className="text-[10px] uppercase font-bold text-slate-500">
+                        {selectedBranch?.tipo === 'MATRIZ' ? 'Matriz' : `Filial ${selectedBranch?.idOriginal}`}
+                      </div>
+                      <div className="font-bold text-xs text-slate-900 truncate max-w-[200px]">
+                        {selectedBranch?.nomeFantasia}
+                      </div>
                     </div>
-                  )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(1)}
+                    className="text-xs font-bold text-blue-600 hover:underline cursor-pointer"
+                  >
+                    Trocar
+                  </button>
+                </div>
+
+                {/* Equipment Card */}
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 bg-emerald-600 text-white rounded-lg">
+                      {isWithoutEquipment ? <Network className="w-4 h-4" /> : <Laptop className="w-4 h-4" />}
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase font-bold text-slate-500">Equipamento</div>
+                      <div className="font-bold text-xs text-slate-900 truncate max-w-[200px]">
+                        {isWithoutEquipment ? 'Infraestrutura / Sem Equipamento' : selectedEquipment?.nome}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(2)}
+                    className="text-xs font-bold text-blue-600 hover:underline cursor-pointer"
+                  >
+                    Trocar
+                  </button>
+                </div>
+              </div>
+
+              {/* History Alert if Equipment had previous tickets */}
+              {previousOrders.length > 0 && !isWithoutEquipment && (
+                <div className="p-3 bg-amber-50 rounded-xl border border-amber-300 text-amber-900 space-y-1">
+                  <div className="font-extrabold flex items-center gap-1.5">
+                    <History className="w-4 h-4 text-amber-600" />
+                    <span>Histórico Técnico: {previousOrders.length} OS anteriores para este equipamento</span>
+                  </div>
+                  <div className="text-[11px] text-amber-800">
+                    Último atendimento: <b>{previousOrders[0]?.numeroOs}</b> ({previousOrders[0]?.status}) em{' '}
+                    {formatDateBR(previousOrders[0]?.dataEntrada)}. Defeito anterior: "{previousOrders[0]?.defeitoRelatado}"
+                  </div>
                 </div>
               )}
 
+              {/* Operational Form Fields */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Técnico Responsável *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={tecnicoResponsavel}
+                    onChange={(e) => setTecnicoResponsavel(e.target.value)}
+                    className="w-full p-2 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-blue-500 outline-none text-xs"
+                    placeholder="Nome do técnico de atendimento"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Categoria do Atendimento
+                  </label>
+                  <select
+                    value={categoriaAtendimento}
+                    onChange={(e) => setCategoriaAtendimento(e.target.value)}
+                    className="w-full p-2 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-blue-500 outline-none text-xs font-semibold"
+                  >
+                    <option value="PDV & Frente de Caixa">PDV & Frente de Caixa</option>
+                    <option value="Balança e Automação">Balança e Automação</option>
+                    <option value="Rede e Infraestrutura">Rede e Infraestrutura</option>
+                    <option value="Impressora / ECF">Impressora / ECF</option>
+                    <option value="Computador / Escritório">Computador / Escritório</option>
+                    <option value="CFTV / Câmeras">CFTV / Câmeras</option>
+                    <option value="Servidor / Retaguarda">Servidor / Retaguarda</option>
+                    <option value="Outro">Outro</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Tipo de Serviço
+                  </label>
+                  <select
+                    value={tipoServico}
+                    onChange={(e) => setTipoServico(e.target.value as ServiceOrderType)}
+                    className="w-full p-2 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-blue-500 outline-none text-xs font-semibold"
+                  >
+                    <option value="corretivo">Manutenção Corretiva</option>
+                    <option value="preventivo">Manutenção Preventiva</option>
+                    <option value="instalacao">Instalação & Ativação</option>
+                    <option value="configuracao">Configuração & Ajustes</option>
+                    <option value="atualizacao">Atualização de Sistema</option>
+                    <option value="outro">Outro</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Prioridade
+                  </label>
+                  <select
+                    value={prioridade}
+                    onChange={(e) => setPrioridade(e.target.value as ServiceOrderPriority)}
+                    className="w-full p-2 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-blue-500 outline-none text-xs font-bold"
+                  >
+                    <option value="NORMAL">Normal</option>
+                    <option value="ALTA">Alta</option>
+                    <option value="CRITICA">Crítica (Loja / PDV Parado)</option>
+                    <option value="URGENTE">Urgente</option>
+                    <option value="BAIXA">Baixa</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Status Inicial da OS
+                  </label>
+                  <select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value as ServiceOrderStatus)}
+                    className="w-full p-2 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-blue-500 outline-none text-xs font-bold"
+                  >
+                    <option value="ABERTA">Aberta / Nova</option>
+                    <option value="EM_ANDAMENTO">Em Atendimento</option>
+                    <option value="AGUARDANDO_PECA">Aguardando Peça</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Defeito Relatado / Motivo do Chamado *
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  value={defeitoRelatado}
+                  onChange={(e) => setDefeitoRelatado(e.target.value)}
+                  placeholder="Ex: Frente de caixa travando no fechamento de cupom fiscal; balança não comunica com sistema..."
+                  className="w-full p-2.5 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-blue-500 outline-none text-xs"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Diagnóstico Técnico Inicial (Opcional)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={diagnosticoTecnico}
+                    onChange={(e) => setDiagnosticoTecnico(e.target.value)}
+                    placeholder="Ex: Falha na porta COM3, SSD com setores corrompidos..."
+                    className="w-full p-2 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-blue-500 outline-none text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Procedimentos / Peças Previstas (Opcional)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={procedimentosExecutados}
+                    onChange={(e) => setProcedimentosExecutados(e.target.value)}
+                    placeholder="Ex: Troca de cabo serial, regravação de imagem padrão Windows..."
+                    className="w-full p-2 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-blue-500 outline-none text-xs"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Observações Gerais (Opcional)
+                </label>
+                <input
+                  type="text"
+                  value={observacoes}
+                  onChange={(e) => setObservacoes(e.target.value)}
+                  placeholder="Ex: Contato no local: Carlos (Gerente), ramal 102."
+                  className="w-full p-2 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-blue-500 outline-none text-xs"
+                />
+              </div>
+
+              {/* Bottom Buttons */}
               <div className="pt-3 border-t border-slate-200 flex items-center justify-between">
                 <button
                   type="button"
@@ -859,204 +1094,24 @@ export const ServiceOrderFastModal: React.FC<ServiceOrderFastModalProps> = ({
                   <ArrowLeft className="w-4 h-4" />
                   <span>Voltar</span>
                 </button>
-                <button
-                  type="button"
-                  disabled={!selectedEquipmentId && !isWithoutEquipment}
-                  onClick={() => setCurrentStep(4)}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-bold rounded-xl shadow-sm transition-all cursor-pointer"
-                >
-                  <span>Avançar para Detalhes da OS</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          )}
 
-          {/* =============================================================== */}
-          {/* ETAPA 4 — Registrar o Atendimento Técnico */}
-          {/* =============================================================== */}
-          {currentStep === 4 && (
-            <form onSubmit={handleFinalSubmit} className="space-y-4 animate-in fade-in duration-150">
-              {/* Context Summary Header */}
-              <div className="p-3.5 bg-slate-100/90 rounded-xl border border-slate-200/90 text-xs grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <div>
-                  <span className="text-slate-500 block">Cliente Matriz:</span>
-                  <strong className="text-slate-900 font-bold">{selectedClient?.nomeFantasia || selectedClient?.razaoSocial}</strong>
-                </div>
-                <div>
-                  <span className="text-slate-500 block">Loja / Filial:</span>
-                  <strong className="text-slate-900 font-bold">{selectedStore?.nome}</strong>
-                </div>
-                <div>
-                  <span className="text-slate-500 block">Equipamento:</span>
-                  <strong className="text-blue-700 font-bold">
-                    {isWithoutEquipment ? 'Infraestrutura Geral da Loja' : selectedEquipment?.nome || 'Equipamento'}
-                  </strong>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Técnico Responsável</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Ex: Carlos Silva"
-                    value={tecnicoResponsavel}
-                    onChange={(e) => setTecnicoResponsavel(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-300 bg-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Categoria do Atendimento</label>
-                  <select
-                    value={categoriaAtendimento}
-                    onChange={(e) => setCategoriaAtendimento(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-300 bg-white font-semibold"
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold"
                   >
-                    <option value="PDV & Frente de Caixa">PDV & Frente de Caixa</option>
-                    <option value="Balança e Automação">Balança e Automação</option>
-                    <option value="Impressora Térmica">Impressora Térmica</option>
-                    <option value="Rede e Conectividade">Rede e Conectividade</option>
-                    <option value="Computador Administrativo">Computador Administrativo</option>
-                    <option value="CFTV & Segurança">CFTV & Segurança</option>
-                    <option value="Sistema / Software">Sistema / Software</option>
-                    <option value="Outro Atendimento">Outro Atendimento</option>
-                  </select>
-                </div>
+                    Cancelar
+                  </button>
 
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Tipo de Serviço</label>
-                  <select
-                    value={tipoServico}
-                    onChange={(e) => setTipoServico(e.target.value as ServiceOrderType)}
-                    className="w-full p-2.5 rounded-xl border border-slate-300 bg-white font-semibold"
+                  <button
+                    type="submit"
+                    className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl shadow-md shadow-blue-500/20 cursor-pointer"
                   >
-                    <option value="corretivo">Manutenção Corretiva</option>
-                    <option value="preventivo">Manutenção Preventiva</option>
-                    <option value="instalacao">Instalação de Novo Equipamento</option>
-                    <option value="configuracao">Configuração / Carga de Parâmetros</option>
-                    <option value="atualizacao">Atualização de Sistema / Drivers</option>
-                    <option value="outro">Outro Tipo</option>
-                  </select>
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Abrir Ordem de Serviço</span>
+                  </button>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Prioridade</label>
-                  <select
-                    value={prioridade}
-                    onChange={(e) => setPrioridade(e.target.value as ServiceOrderPriority)}
-                    className="w-full p-2.5 rounded-xl border border-slate-300 bg-white font-bold"
-                  >
-                    <option value="BAIXA">Baixa</option>
-                    <option value="NORMAL">Normal</option>
-                    <option value="ALTA">Alta</option>
-                    <option value="CRITICA">Crítica (Interrupção de Venda/Caixa)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Status Inicial</label>
-                  <select
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value as ServiceOrderStatus)}
-                    className="w-full p-2.5 rounded-xl border border-slate-300 bg-white font-bold"
-                  >
-                    <option value="ABERTA">Aberta / Pendente</option>
-                    <option value="EM_ANDAMENTO">Em Andamento</option>
-                    <option value="AGUARDANDO_PECA">Aguardando Peça</option>
-                    <option value="CONCLUIDA">Concluída na Loja</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Descrição do Problema Relatado <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  rows={2}
-                  required
-                  placeholder="Descreva o sintoma ou defeito informado pela loja (ex: frente de caixa não inicia Windows, tela azul, erro de porta serial da balança...)"
-                  value={defeitoRelatado}
-                  onChange={(e) => setDefeitoRelatado(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">
-                    Diagnóstico Técnico <span className="text-slate-400 font-normal">(pode ser preenchido durante o atendimento)</span>
-                  </label>
-                  <textarea
-                    rows={2}
-                    placeholder="Análise do técnico sobre a causa raiz do problema..."
-                    value={diagnosticoTecnico}
-                    onChange={(e) => setDiagnosticoTecnico(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-300 bg-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">
-                    Procedimentos Executados <span className="text-slate-400 font-normal">(pode ser atualizado depois)</span>
-                  </label>
-                  <textarea
-                    rows={2}
-                    placeholder="Ações realizadas (ex: troca de cabo de rede, reinicialização de switch, reinstalação de driver...)"
-                    value={procedimentosExecutados}
-                    onChange={(e) => setProcedimentosExecutados(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-300 bg-white"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Peças ou Componentes Utilizados</label>
-                  <input
-                    type="text"
-                    placeholder="Ex: SSD 240GB Kingston, Cabo patch cord Cat6, Fonte 12V..."
-                    value={pecasTrocadas}
-                    onChange={(e) => setPecasTrocadas(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-300 bg-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Observações de Atendimento</label>
-                  <input
-                    type="text"
-                    placeholder="Instruções para o operador ou notas internas..."
-                    value={observacoes}
-                    onChange={(e) => setObservacoes(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-300 bg-white"
-                  />
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="pt-3 border-t border-slate-200 flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep(3)}
-                  className="flex items-center gap-1.5 px-4 py-2 border border-slate-300 rounded-xl font-bold text-slate-700 hover:bg-slate-100 cursor-pointer"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>Voltar</span>
-                </button>
-
-                <button
-                  type="submit"
-                  className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl shadow-md transition-all cursor-pointer text-xs sm:text-sm"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Concluir e Abrir Ordem de Serviço</span>
-                </button>
               </div>
             </form>
           )}
