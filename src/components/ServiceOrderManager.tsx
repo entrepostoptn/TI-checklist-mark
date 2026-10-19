@@ -768,7 +768,7 @@ export const ServiceOrderManager: React.FC<ServiceOrderManagerProps> = ({
             setIsLegacyEditModalOpen(false);
             setOrderToEdit(null);
           }}
-          orderToEdit={orderToEdit}
+          orderToEdit={orderToEdit ? (orders.find((o) => o.id === orderToEdit.id) || orderToEdit) : null}
           onOpenChecklistForMachine={onStartChecklistForMachine}
         />
       )}

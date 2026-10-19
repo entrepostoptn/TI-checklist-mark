@@ -8,87 +8,109 @@ service cloud.firestore {
 
     // Clientes
     match /clients/{clientId} {
-      allow read, write: if isValidId(clientId);
+      allow get, list: if true;
+      allow write: if isValidId(clientId);
     }
 
     // Lojas Legadas
     match /stores/{storeId} {
-      allow read, write: if isValidId(storeId);
+      allow get, list: if true;
+      allow write: if isValidId(storeId);
     }
 
     // Matrizes e Filiais Mark Security
     match /branches/{branchId} {
-      allow read, write: if isValidId(branchId);
+      allow get, list: if true;
+      allow write: if isValidId(branchId);
     }
 
     // Equipamentos / Máquinas / PDVs / Servidores
     match /equipments/{equipmentId} {
-      allow read, write: if isValidId(equipmentId);
+      allow get, list: if true;
+      allow write: if isValidId(equipmentId);
     }
 
     // Ordens de Serviço
     match /service_orders/{orderId} {
-      allow read, write: if isValidId(orderId);
+      allow get, list: if true;
+      allow write: if isValidId(orderId);
     }
 
     // Movimentações de Entrada e Retirada
     match /movements/{movementId} {
-      allow read, write: if isValidId(movementId);
+      allow get, list: if true;
+      allow write: if isValidId(movementId);
     }
 
     // Alterações de Hardware e Peças
     match /hardware_changes/{changeId} {
-      allow read, write: if isValidId(changeId);
+      allow get, list: if true;
+      allow write: if isValidId(changeId);
     }
 
     // Checklists Operacionais das Filiais
     match /branch_checklists/{chkId} {
-      allow read, write: if isValidId(chkId);
+      allow get, list: if true;
+      allow write: if isValidId(chkId);
     }
 
     // Modelos de Checklist Reutilizáveis
     match /checklist_templates/{templateId} {
-      allow read, write: if isValidId(templateId);
+      allow get, list: if true;
+      allow write: if isValidId(templateId);
     }
 
     // Registros Salvos de Checklist
     match /checklist_records/{recordId} {
-      allow read, write: if isValidId(recordId);
+      allow get, list: if true;
+      allow write: if isValidId(recordId);
     }
 
     // Trilha Imutável de Auditoria
     match /audit_logs/{logId} {
-      allow read, write: if isValidId(logId);
+      allow get, list: if true;
+      allow write: if isValidId(logId);
     }
 
     // Usuários e Credenciais
     match /users/{userId} {
-      allow read, write: if isValidId(userId);
+      allow get, list: if true;
+      allow write: if isValidId(userId);
+    }
+
+    match /user_credentials/{credId} {
+      allow get, list: if true;
+      allow write: if isValidId(credId);
     }
 
     // Base de Conhecimento & Procedimentos
     match /knowledge_articles/{artId} {
-      allow read, write: if isValidId(artId);
+      allow get, list: if true;
+      allow write: if isValidId(artId);
     }
 
     // Acessos Remotos AnyDesk e TeamViewer (Req 12)
     match /remote_access/{accessId} {
-      allow read, write: if isValidId(accessId);
+      allow get, list: if true;
+      allow write: if isValidId(accessId);
     }
 
     // Histórico de Acesso Remoto e Formatação (Req 12.4)
     match /remote_access_history/{histId} {
-      allow read, write: if isValidId(histId);
+      allow get, list: if true;
+      allow write: if isValidId(histId);
     }
 
     // Histórico Técnico Completo de Máquinas e Patrimônio (Req 14.5)
     match /machine_patrimony_history/{histId} {
-      allow read, write: if isValidId(histId);
+      allow get, list: if true;
+      allow write: if isValidId(histId);
     }
 
     // Configurações do Sistema e Controle de Sincronização
     match /system_config/{configId} {
-      allow read, write: if isValidId(configId);
+      allow get, list: if true;
+      allow write: if isValidId(configId);
     }
   }
 }

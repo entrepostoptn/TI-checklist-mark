@@ -860,7 +860,7 @@ export const MachinesManager: React.FC<MachinesManagerProps> = ({
       {/* MODAL 1: Ficha Completa do Patrimônio (Requisito 14.3) */}
       {selectedEquipmentForDetail && (
         <EquipmentDetailModal
-          equipment={selectedEquipmentForDetail}
+          equipment={equipments.find((e) => e.id === selectedEquipmentForDetail.id) || selectedEquipmentForDetail}
           isOpen={Boolean(selectedEquipmentForDetail)}
           onClose={() => setSelectedEquipmentForDetail(null)}
           onEditEquipment={(eq) => {

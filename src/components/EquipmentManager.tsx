@@ -552,7 +552,7 @@ export const EquipmentManager: React.FC<EquipmentManagerProps> = ({
 
       {/* Modal da Ficha Completa do Equipamento (Dossiê) */}
       <EquipmentDetailModal
-        equipment={selectedEquipmentForDetail}
+        equipment={selectedEquipmentForDetail ? (equipments.find((e) => e.id === selectedEquipmentForDetail.id) || selectedEquipmentForDetail) : null}
         isOpen={Boolean(selectedEquipmentForDetail)}
         onClose={() => setSelectedEquipmentForDetail(null)}
         onEditEquipment={(eq) => {

@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { useSync } from '../context/SyncContext';
 import { useEquipment } from '../context/EquipmentContext';
 import { useServiceOrders } from '../context/ServiceOrderContext';
+import { useBranches } from '../context/BranchContext';
+import { useBranchChecklists } from '../context/BranchChecklistContext';
+import { useAuth } from '../context/AuthContext';
 import {
   Cloud,
   CloudCheck,
@@ -15,6 +18,11 @@ import {
   Database,
   Wifi,
   WifiOff,
+  Building2,
+  ClipboardCheck,
+  Users,
+  Shield,
+  Layers,
 } from 'lucide-react';
 
 interface SyncStatusModalProps {
@@ -31,6 +39,9 @@ export const SyncStatusModal: React.FC<SyncStatusModalProps> = ({
   const { status, isOnline, lastSyncTime, purgeTestData } = useSync();
   const { equipments, stats } = useEquipment();
   const { orders } = useServiceOrders();
+  const { branches } = useBranches();
+  const { checklists, templates } = useBranchChecklists();
+  const { users } = useAuth();
 
   const [isPurging, setIsPurging] = useState(false);
   const [purgeResult, setPurgeResult] = useState<{
@@ -146,25 +157,66 @@ export const SyncStatusModal: React.FC<SyncStatusModalProps> = ({
             </div>
           </div>
 
-          {/* Cloud Counts */}
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs">
-            <div className="flex items-center justify-between text-slate-700">
-              <span className="flex items-center gap-2">
-                <Database className="w-4 h-4 text-blue-600" />
-                Equipamentos no Banco Central:
-              </span>
-              <span className="font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200">
-                {equipments.length}
-              </span>
+          {/* Cloud Counts & Database Details */}
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2.5 text-xs">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1 flex items-center justify-between">
+              <span>Coleções Sincronizadas no Firestore</span>
+              <span className="text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded font-mono text-[10px]">ai-studio-techsetupcheckli...</span>
             </div>
-            <div className="flex items-center justify-between text-slate-700">
-              <span className="flex items-center gap-2">
-                <Database className="w-4 h-4 text-indigo-600" />
-                Ordens de Serviço no Banco Central:
-              </span>
-              <span className="font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200">
-                {orders.length}
-              </span>
+
+            <div className="grid grid-cols-2 gap-2 text-slate-700">
+              <div className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-200">
+                <span className="flex items-center gap-1.5 truncate">
+                  <Database className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                  Máquinas / Equipamentos:
+                </span>
+                <span className="font-bold text-slate-900 ml-1">{equipments.length}</span>
+              </div>
+
+              <div className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-200">
+                <span className="flex items-center gap-1.5 truncate">
+                  <Building2 className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  Matrizes e Filiais:
+                </span>
+                <span className="font-bold text-slate-900 ml-1">{branches.length}</span>
+              </div>
+
+              <div className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-200">
+                <span className="flex items-center gap-1.5 truncate">
+                  <Layers className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                  Ordens de Serviço:
+                </span>
+                <span className="font-bold text-slate-900 ml-1">{orders.length}</span>
+              </div>
+
+              <div className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-200">
+                <span className="flex items-center gap-1.5 truncate">
+                  <ClipboardCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  Checklists de Filial:
+                </span>
+                <span className="font-bold text-slate-900 ml-1">{checklists.length}</span>
+              </div>
+
+              <div className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-200">
+                <span className="flex items-center gap-1.5 truncate">
+                  <Shield className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                  Modelos de Checklist:
+                </span>
+                <span className="font-bold text-slate-900 ml-1">{templates.length}</span>
+              </div>
+
+              <div className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-200">
+                <span className="flex items-center gap-1.5 truncate">
+                  <Users className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+                  Usuários Autorizados:
+                </span>
+                <span className="font-bold text-slate-900 ml-1">{users.length}</span>
+              </div>
+            </div>
+
+            <div className="pt-1.5 text-[10px] text-slate-500 flex items-center justify-between border-t border-slate-200/60">
+              <span>Projeto: <span className="font-mono text-slate-700">gen-lang-client-0572978799</span></span>
+              <span>Hostinger & GitHub: <span className="font-semibold text-emerald-700">Mesma Base Ativa</span></span>
             </div>
           </div>
 

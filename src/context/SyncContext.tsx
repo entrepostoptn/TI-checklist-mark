@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { SyncStatus, purgeAllTestDataFromFirestore } from '../services/firestoreSync';
+import { SyncStatus, purgeAllTestDataFromFirestore, addSyncListener } from '../services/firestoreSync';
 
 interface SyncContextType {
   status: SyncStatus;
@@ -24,6 +24,17 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(new Date());
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Listen to Firestore real-time collection updates
+  useEffect(() => {
+    const unsub = addSyncListener((event) => {
+      setStatus('online');
+      setIsOnline(true);
+      setLastSyncTime(event.timestamp);
+      setErrorMessage(null);
+    });
+    return () => unsub();
+  }, []);
 
   // Listen to browser network online/offline events
   useEffect(() => {

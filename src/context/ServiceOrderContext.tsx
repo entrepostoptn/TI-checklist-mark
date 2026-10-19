@@ -198,13 +198,11 @@ export const ServiceOrderProvider: React.FC<{ children: React.ReactNode }> = ({ 
     // 2. Real-time subscription to service_orders collection
     const unsub = subscribeToServiceOrders(
       (remoteOrders) => {
-        if (remoteOrders && remoteOrders.length > 0) {
-          setOrders(remoteOrders);
-          try {
-            localStorage.setItem(STORAGE_KEY_ORDERS, JSON.stringify(remoteOrders));
-          } catch {
-            // ignore
-          }
+        setOrders(remoteOrders);
+        try {
+          localStorage.setItem(STORAGE_KEY_ORDERS, JSON.stringify(remoteOrders));
+        } catch {
+          // ignore
         }
       },
       (err) => console.warn('Service orders sync snapshot error:', err)

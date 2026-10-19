@@ -1,6 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { User, UserRole, UserPermissions } from '../types/auth';
 import { verifyUserPassword, hashPasswordWithSalt, generateSalt, PRESET_SALTS } from '../utils/cryptoAuth';
+import {
+  subscribeToUsers,
+  syncSaveUser,
+  subscribeToCredentials,
+  syncSaveCredentials,
+} from '../services/firestoreSync';
 
 interface AuthContextType {
   user: User | null;
@@ -109,7 +115,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loginError, setLoginError] = useState<string | null>(null);
   const [failedAttempts, setFailedAttempts] = useState<Record<string, { count: number; lockUntil?: number }>>({});
 
-  // Salva no localStorage
+
   useEffect(() => {
     try {
       if (user) {
@@ -131,6 +137,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem(STORAGE_KEY_CREDENTIALS, JSON.stringify(credentialsStore));
     } catch {}
   }, [credentialsStore]);
+
+  // Sincronização em tempo real de usuários e credenciais via Firestore
+  useEffect(() => {
+    const unsubUsers = subscribeToUsers(
+      (remoteUsers) => {
+        if (remoteUsers && remoteUsers.length > 0) {
+          setUsers(remoteUsers);
+          setUser((currentUser) => {
+            if (!currentUser) return null;
+            const updated = remoteUsers.find((u) => u.id === currentUser.id);
+            if (updated) {
+              if (updated.status === 'inativo') return null;
+              return { ...currentUser, ...updated };
+            }
+            return currentUser;
+          });
+          try {
+            localStorage.setItem(STORAGE_KEY_USERS_LIST, JSON.stringify(remoteUsers));
+          } catch {}
+        }
+      },
+      (err) => console.warn('Users sync error:', err)
+    );
+
+    const unsubCreds = subscribeToCredentials(
+      (remoteCreds) => {
+        if (remoteCreds && Object.keys(remoteCreds).length > 0) {
+          setCredentialsStore(remoteCreds);
+          try {
+            localStorage.setItem(STORAGE_KEY_CREDENTIALS, JSON.stringify(remoteCreds));
+          } catch {}
+        }
+      },
+      (err) => console.warn('Credentials sync error:', err)
+    );
+
+    return () => {
+      unsubUsers();
+      unsubCreds();
+    };
+  }, []);
 
   // Permissões dinâmicas baseadas no perfil do usuário logado
   const permissions: UserPermissions = useMemo(() => {
@@ -281,16 +328,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         avatarCor: data.perfil === 'ADMIN' ? '#2563EB' : '#10B981',
       };
 
-      setCredentialsStore((prev) => ({
-        ...prev,
+      const newCredentials = {
+        ...credentialsStore,
         [newId]: { hash, salt },
-      }));
-
+      };
+      setCredentialsStore(newCredentials);
       setUsers((prev) => [...prev, newUser]);
+
+      syncSaveUser(newUser).catch((err) => console.warn('Erro ao salvar usuário no Firestore:', err));
+      syncSaveCredentials(newCredentials).catch((err) => console.warn('Erro ao salvar credenciais no Firestore:', err));
 
       return { success: true };
     },
-    [user, users]
+    [user, users, credentialsStore]
   );
 
   // Edição de dados do usuário
@@ -300,24 +350,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: false, error: 'Sem permissão para alterar este usuário.' };
       }
 
-      setUsers((prev) =>
-        prev.map((u) => {
-          if (u.id === id) {
-            const updated = { ...u, ...patch };
-            if (user?.id === id) setUser(updated);
-            return updated;
-          }
-          return u;
-        })
-      );
+      const existing = users.find((u) => u.id === id);
+      if (!existing) return { success: false, error: 'Usuário não encontrado.' };
+
+      const updated = { ...existing, ...patch };
+      if (user?.id === id) setUser(updated);
+
+      setUsers((prev) => prev.map((u) => (u.id === id ? updated : u)));
+      syncSaveUser(updated).catch((err) => console.warn('Erro ao atualizar usuário no Firestore:', err));
 
       return { success: true };
     },
-    [user]
+    [user, users]
   );
 
   // Redefinição de senha de outro usuário (Exclusivo Administrador Matheus Guarnieri)
-  // Sem expor nem registrar senhas em texto puro
   const resetUserPassword = useCallback(
     async (targetUserId: string, newPassword: string, motivo: string): Promise<{ success: boolean; error?: string }> => {
       if (user?.perfil !== 'ADMIN') {
@@ -336,18 +383,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const salt = generateSalt();
       const hash = await hashPasswordWithSalt(newPassword, salt);
 
-      setCredentialsStore((prev) => ({
-        ...prev,
+      const updatedCreds = {
+        ...credentialsStore,
         [targetUserId]: { hash, salt },
-      }));
+      };
+      setCredentialsStore(updatedCreds);
+      syncSaveCredentials(updatedCreds).catch((err) => console.warn('Erro ao atualizar credenciais no Firestore:', err));
 
+      const updatedTarget: User = { ...target, precisaTrocarSenha: true };
       setUsers((prev) =>
-        prev.map((u) => (u.id === targetUserId ? { ...u, precisaTrocarSenha: true } : u))
+        prev.map((u) => (u.id === targetUserId ? updatedTarget : u))
       );
+      syncSaveUser(updatedTarget).catch((err) => console.warn('Erro ao atualizar usuário no Firestore:', err));
 
       return { success: true };
     },
-    [user, users]
+    [user, users, credentialsStore]
   );
 
   // Alteração da própria senha
@@ -369,14 +420,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const newSalt = generateSalt();
       const newHash = await hashPasswordWithSalt(newPassword, newSalt);
 
-      setCredentialsStore((prev) => ({
-        ...prev,
+      const updatedCreds = {
+        ...credentialsStore,
         [user.id]: { hash: newHash, salt: newSalt },
-      }));
+      };
+      setCredentialsStore(updatedCreds);
+      syncSaveCredentials(updatedCreds).catch((err) => console.warn('Erro ao atualizar credenciais no Firestore:', err));
 
       const updatedUser: User = { ...user, precisaTrocarSenha: false };
       setUser(updatedUser);
       setUsers((prev) => prev.map((u) => (u.id === user.id ? updatedUser : u)));
+      syncSaveUser(updatedUser).catch((err) => console.warn('Erro ao atualizar usuário no Firestore:', err));
 
       return { success: true };
     },
@@ -393,19 +447,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: false, error: 'Você não pode inativar sua própria conta de administrador.' };
       }
 
+      const target = users.find((u) => u.id === id);
+      if (!target) return { success: false, error: 'Usuário não encontrado' };
+
+      const nextStatus: 'ativo' | 'inativo' = target.status === 'ativo' ? 'inativo' : 'ativo';
+      const updated: User = { ...target, status: nextStatus };
+
       setUsers((prev) =>
-        prev.map((u) => {
-          if (u.id === id) {
-            const nextStatus: 'ativo' | 'inativo' = u.status === 'ativo' ? 'inativo' : 'ativo';
-            return { ...u, status: nextStatus };
-          }
-          return u;
-        })
+        prev.map((u) => (u.id === id ? updated : u))
       );
+      syncSaveUser(updated).catch((err) => console.warn('Erro ao atualizar usuário no Firestore:', err));
 
       return { success: true };
     },
-    [user]
+    [user, users]
   );
 
   return (

@@ -708,25 +708,9 @@ export const EquipmentProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     // 2. Subscribe in real-time to central Firestore collections
     const unsubEquipments = subscribeToEquipments(
       (remoteEquipments) => {
-        let finalEquipments = remoteEquipments;
-        if (remoteEquipments && remoteEquipments.length > 0) {
-          const existingIds = new Set(remoteEquipments.map((e) => e.id));
-          const missingPata = PATA_NEGRA_EQUIPMENTS.filter((eq) => !existingIds.has(eq.id));
-          if (missingPata.length > 0) {
-            finalEquipments = [...missingPata, ...remoteEquipments];
-            missingPata.forEach((eq) => {
-              syncSaveEquipment(eq).catch(() => {});
-            });
-          }
-        } else {
-          finalEquipments = INITIAL_DEMO_EQUIPMENTS;
-          INITIAL_DEMO_EQUIPMENTS.forEach((eq) => {
-            syncSaveEquipment(eq).catch(() => {});
-          });
-        }
-        setEquipments(finalEquipments);
+        setEquipments(remoteEquipments);
         try {
-          localStorage.setItem(STORAGE_KEY_EQUIPMENTS, JSON.stringify(finalEquipments));
+          localStorage.setItem(STORAGE_KEY_EQUIPMENTS, JSON.stringify(remoteEquipments));
         } catch {
           // ignore
         }
@@ -765,20 +749,6 @@ export const EquipmentProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     };
   }, []);
 
-  useEffect(() => {
-    // Automatically guarantee Mark Security equipments exist
-    setEquipments((prev) => {
-      const existingIds = new Set(prev.map((e) => e.id));
-      const missing = PATA_NEGRA_EQUIPMENTS.filter((eq) => !existingIds.has(eq.id));
-      if (missing.length > 0) {
-        missing.forEach((eq) => {
-          syncSaveEquipment(eq).catch(() => {});
-        });
-        return [...missing, ...prev];
-      }
-      return prev;
-    });
-  }, []);
 
   // Add Equipment with duplicate validation and Firestore sync
   const addEquipment = useCallback((data: Omit<Equipment, 'id' | 'createdAt' | 'updatedAt'>) => {

@@ -69,9 +69,7 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     try {
       const unsub = subscribeToBranches(
         (remote) => {
-          if (remote && remote.length > 0) {
-            setBranches(remote);
-          }
+          setBranches(remote);
         },
         (err) => {
           console.warn('Sincronização offline para filiais:', err);

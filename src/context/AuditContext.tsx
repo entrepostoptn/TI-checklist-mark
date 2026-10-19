@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { AuditLog, AuditActionType, AuditRecordType, AuditFilterOptions } from '../types/audit';
 import { INITIAL_AUDIT_LOGS } from '../constants/initialPataNegraData';
+import { subscribeToAuditLogs, syncSaveAuditLog } from '../services/firestoreSync';
 
 interface AuditContextType {
   logs: AuditLog[];
@@ -41,13 +42,27 @@ export const AuditProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     acao: 'TODAS',
   });
 
+  // Sincronização em tempo real via Firestore
+  useEffect(() => {
+    const unsub = subscribeToAuditLogs(
+      (remoteLogs) => {
+        setLogs(remoteLogs);
+        try {
+          localStorage.setItem(STORAGE_KEY_AUDIT, JSON.stringify(remoteLogs));
+        } catch {}
+      },
+      (err) => console.warn('Audit logs sync error:', err)
+    );
+    return () => unsub();
+  }, []);
+
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY_AUDIT, JSON.stringify(logs));
     } catch {}
   }, [logs]);
 
-  // Registro imutável de auditoria (somente adição, nunca edição ou deleção por usuários comuns)
+  // Registro imutável de auditoria sincronizado globalmente
   const addAuditLog = useCallback((entry: Omit<AuditLog, 'id' | 'dataHora'>) => {
     const newLog: AuditLog = {
       ...entry,
@@ -55,6 +70,7 @@ export const AuditProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       dataHora: new Date().toISOString(),
     };
     setLogs((prev) => [newLog, ...prev]);
+    syncSaveAuditLog(newLog).catch((err) => console.warn('Erro ao salvar log de auditoria no Firestore:', err));
   }, []);
 
   const clearFilters = useCallback(() => {

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { AuthProvider, useAuth, getUserDisplayRole } from './context/AuthContext';
 import { AuditProvider } from './context/AuditContext';
 import { BranchProvider } from './context/BranchContext';
@@ -8,6 +8,7 @@ import { ClientProvider } from './context/ClientContext';
 import { ChecklistProvider, useChecklist } from './context/ChecklistContext';
 import { ServiceOrderProvider } from './context/ServiceOrderContext';
 import { EquipmentProvider } from './context/EquipmentContext';
+import { ensureGlobalDatabaseSeeded } from './services/firestoreSync';
 
 // Components
 import { LoginScreen } from './components/LoginScreen';
@@ -75,6 +76,13 @@ const MainApp: React.FC = () => {
   // Primary navigation (Default: Dashboard)
   const [currentPage, setCurrentPage] = useState<SystemPage>('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Garante a verificação e integridade da base de dados central no Firestore
+  useEffect(() => {
+    ensureGlobalDatabaseSeeded().catch((err) => {
+      console.warn('Verificação de integridade do banco central Firestore:', err);
+    });
+  }, []);
 
   // Cross-module linking state
   const [selectedBranchForChecklist, setSelectedBranchForChecklist] = useState<BranchUnit | null>(null);

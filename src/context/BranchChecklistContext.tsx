@@ -13,6 +13,14 @@ import {
 import { useAudit } from './AuditContext';
 import { useAuth } from './AuthContext';
 import { useBranches } from './BranchContext';
+import {
+  subscribeToBranchChecklists,
+  syncSaveBranchChecklist,
+  syncDeleteBranchChecklist,
+  subscribeToChecklistTemplates,
+  syncSaveChecklistTemplate,
+  syncDeleteChecklistTemplate,
+} from '../services/firestoreSync';
 
 interface CreateChecklistParams {
   unidadeId: string;
@@ -142,6 +150,34 @@ export const BranchChecklistProvider: React.FC<{ children: React.ReactNode }> = 
     } catch {}
   }, [checklists]);
 
+  // Sincronização em tempo real via Firestore para computador e celular
+  useEffect(() => {
+    const unsubTemplates = subscribeToChecklistTemplates(
+      (remoteTpls) => {
+        setTemplates(remoteTpls);
+        try {
+          localStorage.setItem(STORAGE_KEY_TEMPLATES, JSON.stringify(remoteTpls));
+        } catch {}
+      },
+      (err) => console.warn('Templates sync error:', err)
+    );
+
+    const unsubChecklists = subscribeToBranchChecklists(
+      (remoteChecklists) => {
+        setChecklists(remoteChecklists);
+        try {
+          localStorage.setItem(STORAGE_KEY_CHECKLISTS, JSON.stringify(remoteChecklists));
+        } catch {}
+      },
+      (err) => console.warn('Checklists sync error:', err)
+    );
+
+    return () => {
+      unsubTemplates();
+      unsubChecklists();
+    };
+  }, []);
+
   // Gestão de Modelos
   const getTemplateById = useCallback((id: string) => templates.find((t) => t.id === id), [templates]);
 
@@ -156,6 +192,7 @@ export const BranchChecklistProvider: React.FC<{ children: React.ReactNode }> = 
       };
 
       setTemplates((prev) => [newTemplate, ...prev]);
+      syncSaveChecklistTemplate(newTemplate).catch((err) => console.warn('Erro ao salvar modelo no Firestore:', err));
 
       addAuditLog({
         usuarioId: user?.id || 'sistema',
@@ -186,6 +223,7 @@ export const BranchChecklistProvider: React.FC<{ children: React.ReactNode }> = 
       };
 
       setTemplates((prev) => prev.map((t) => (t.id === id ? updated : t)));
+      syncSaveChecklistTemplate(updated).catch((err) => console.warn('Erro ao atualizar modelo no Firestore:', err));
 
       addAuditLog({
         usuarioId: user?.id || 'sistema',
@@ -210,6 +248,7 @@ export const BranchChecklistProvider: React.FC<{ children: React.ReactNode }> = 
       if (!existing) return { success: false, error: 'Modelo não encontrado' };
 
       setTemplates((prev) => prev.filter((t) => t.id !== id));
+      syncDeleteChecklistTemplate(id).catch((err) => console.warn('Erro ao excluir modelo no Firestore:', err));
 
       addAuditLog({
         usuarioId: user?.id || 'sistema',
@@ -268,6 +307,7 @@ export const BranchChecklistProvider: React.FC<{ children: React.ReactNode }> = 
       };
 
       setChecklists((prev) => [newChecklist, ...prev]);
+      syncSaveBranchChecklist(newChecklist).catch((err) => console.warn('Erro ao salvar checklist no Firestore:', err));
 
       addAuditLog({
         usuarioId: user?.id || 'sistema',
@@ -317,6 +357,7 @@ export const BranchChecklistProvider: React.FC<{ children: React.ReactNode }> = 
       };
 
       setChecklists((prev) => [newChecklist, ...prev]);
+      syncSaveBranchChecklist(newChecklist).catch((err) => console.warn('Erro ao salvar checklist no Firestore:', err));
 
       addAuditLog({
         usuarioId: user?.id || 'sistema',
@@ -359,12 +400,16 @@ export const BranchChecklistProvider: React.FC<{ children: React.ReactNode }> = 
             newOverallStatus = 'EM_ANDAMENTO';
           }
 
-          return {
+          const updatedChecklist = {
             ...chk,
             itens: updatedItems,
             status: newOverallStatus,
             dataAtualizacao: new Date().toISOString(),
           };
+
+          syncSaveBranchChecklist(updatedChecklist).catch((err) => console.warn('Erro ao atualizar checklist no Firestore:', err));
+
+          return updatedChecklist;
         })
       );
     },
@@ -387,11 +432,13 @@ export const BranchChecklistProvider: React.FC<{ children: React.ReactNode }> = 
       setChecklists((prev) =>
         prev.map((c) => {
           if (c.id !== checklistId) return c;
-          return {
+          const updatedChecklist = {
             ...c,
             itens: [...c.itens, newItem],
             dataAtualizacao: nowIso,
           };
+          syncSaveBranchChecklist(updatedChecklist).catch((err) => console.warn('Erro ao salvar item no Firestore:', err));
+          return updatedChecklist;
         })
       );
 
@@ -412,11 +459,13 @@ export const BranchChecklistProvider: React.FC<{ children: React.ReactNode }> = 
       setChecklists((prev) =>
         prev.map((c) => {
           if (c.id !== checklistId) return c;
-          return {
+          const updatedChecklist = {
             ...c,
             itens: c.itens.filter((i) => i.id !== itemId),
             dataAtualizacao: new Date().toISOString(),
           };
+          syncSaveBranchChecklist(updatedChecklist).catch((err) => console.warn('Erro ao remover item no Firestore:', err));
+          return updatedChecklist;
         })
       );
 
@@ -442,17 +491,17 @@ export const BranchChecklistProvider: React.FC<{ children: React.ReactNode }> = 
       const isAnyDone = existing.itens.some((i) => i.status !== 'PENDENTE');
       const newStatus = isAnyDone ? 'EM_ANDAMENTO' : existing.status;
 
+      const updatedChecklist: BranchChecklist = {
+        ...existing,
+        status: newStatus,
+        observacoesGerais: observacoesGerais !== undefined ? observacoesGerais : existing.observacoesGerais,
+        dataAtualizacao: nowIso,
+      };
+
       setChecklists((prev) =>
-        prev.map((c) => {
-          if (c.id !== checklistId) return c;
-          return {
-            ...c,
-            status: newStatus,
-            observacoesGerais: observacoesGerais !== undefined ? observacoesGerais : c.observacoesGerais,
-            dataAtualizacao: nowIso,
-          };
-        })
+        prev.map((c) => (c.id === checklistId ? updatedChecklist : c))
       );
+      syncSaveBranchChecklist(updatedChecklist).catch((err) => console.warn('Erro ao salvar rascunho no Firestore:', err));
 
       addAuditLog({
         usuarioId: user?.id || 'sistema',
@@ -488,18 +537,18 @@ export const BranchChecklistProvider: React.FC<{ children: React.ReactNode }> = 
       const finalStatus: ChecklistOverallStatus = hasNonConformity ? 'NAO_CONFORME' : 'CONCLUIDO';
       const nowIso = new Date().toISOString();
 
+      const updatedChecklist: BranchChecklist = {
+        ...existing,
+        status: finalStatus,
+        dataConclusao: nowIso,
+        dataAtualizacao: nowIso,
+        observacoesGerais: observacoesGerais !== undefined ? observacoesGerais : existing.observacoesGerais,
+      };
+
       setChecklists((prev) =>
-        prev.map((c) => {
-          if (c.id !== checklistId) return c;
-          return {
-            ...c,
-            status: finalStatus,
-            dataConclusao: nowIso,
-            dataAtualizacao: nowIso,
-            observacoesGerais: observacoesGerais !== undefined ? observacoesGerais : c.observacoesGerais,
-          };
-        })
+        prev.map((c) => (c.id === checklistId ? updatedChecklist : c))
       );
+      syncSaveBranchChecklist(updatedChecklist).catch((err) => console.warn('Erro ao concluir checklist no Firestore:', err));
 
       addAuditLog({
         usuarioId: user?.id || 'sistema',
@@ -540,18 +589,18 @@ export const BranchChecklistProvider: React.FC<{ children: React.ReactNode }> = 
         motivo: cleanMotivo,
       };
 
+      const updatedChecklist: BranchChecklist = {
+        ...existing,
+        status: 'EM_ANDAMENTO' as ChecklistOverallStatus,
+        dataConclusao: undefined,
+        dataAtualizacao: nowIso,
+        historicoReabertura: [...(existing.historicoReabertura || []), reopenRecord],
+      };
+
       setChecklists((prev) =>
-        prev.map((c) => {
-          if (c.id !== checklistId) return c;
-          return {
-            ...c,
-            status: 'EM_ANDAMENTO',
-            dataConclusao: undefined,
-            dataAtualizacao: nowIso,
-            historicoReabertura: [...(c.historicoReabertura || []), reopenRecord],
-          };
-        })
+        prev.map((c) => (c.id === checklistId ? updatedChecklist : c))
       );
+      syncSaveBranchChecklist(updatedChecklist).catch((err) => console.warn('Erro ao reabrir checklist no Firestore:', err));
 
       addAuditLog({
         usuarioId: user?.id || 'admin',
@@ -578,6 +627,7 @@ export const BranchChecklistProvider: React.FC<{ children: React.ReactNode }> = 
       if (!existing) return { success: false, error: 'Checklist não encontrado' };
 
       setChecklists((prev) => prev.filter((c) => c.id !== checklistId));
+      syncDeleteBranchChecklist(checklistId).catch((err) => console.warn('Erro ao excluir checklist no Firestore:', err));
 
       addAuditLog({
         usuarioId: user?.id || 'sistema',

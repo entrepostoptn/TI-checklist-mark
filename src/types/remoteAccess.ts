@@ -9,7 +9,7 @@ export interface RemoteAccess {
   filialNome: string;
   patrimonio?: string;
   numeroSerie?: string;
-  appAcessoRemoto: 'AnyDesk' | 'TeamViewer' | 'Outro';
+  appAcessoRemoto: 'AnyDesk' | 'TeamViewer' | 'Ammyy' | 'Outro';
   anydeskId: string;
   teamviewerId?: string;
   apelidoDispositivo?: string;

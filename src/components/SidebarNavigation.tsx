@@ -70,7 +70,7 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
       id: 'machines' as SystemPage,
       label: 'Máquinas e Patrimônio',
       icon: Monitor,
-      badge: 'Módulo 14',
+      badge: null,
     },
     {
       id: 'checklists' as SystemPage,

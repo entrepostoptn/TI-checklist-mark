@@ -1,6 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { KnowledgeArticle, KnowledgeCategory } from '../types/knowledgeBase';
 import { useAuth } from '../context/AuthContext';
+import {
+  subscribeToKnowledgeArticles,
+  syncSaveKnowledgeArticle,
+  syncDeleteKnowledgeArticle,
+} from '../services/firestoreSync';
 import {
   BookOpen,
   Search,
@@ -269,6 +274,19 @@ export const KnowledgeBaseView: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedArticle, setSelectedArticle] = useState<KnowledgeArticle | null>(null);
 
+  // Sincronização em tempo real da Base de Conhecimento com o Firestore
+  useEffect(() => {
+    const unsub = subscribeToKnowledgeArticles(
+      (remoteArticles) => {
+        if (remoteArticles) {
+          setArticles(remoteArticles);
+        }
+      },
+      (err) => console.warn('Knowledge articles sync error:', err)
+    );
+    return () => unsub();
+  }, []);
+
   // New Article Modal
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -323,6 +341,8 @@ export const KnowledgeBaseView: React.FC = () => {
     };
 
     setArticles((prev) => [newArt, ...prev]);
+    syncSaveKnowledgeArticle(newArt).catch((err) => console.warn('Erro ao salvar artigo no Firestore:', err));
+
     setIsNewModalOpen(false);
     setSelectedArticle(newArt);
 
