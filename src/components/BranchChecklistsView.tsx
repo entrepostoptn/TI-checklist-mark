@@ -9,6 +9,7 @@ import {
   BranchChecklistItem,
 } from '../types/branchChecklist';
 import { BranchUnit } from '../types/branch';
+import { ConfirmModal } from './ConfirmModal';
 import {
   ClipboardCheck,
   Plus,
@@ -79,6 +80,7 @@ export const BranchChecklistsView: React.FC<BranchChecklistsViewProps> = ({
   const [generalObservations, setGeneralObservations] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
   const [successToast, setSuccessToast] = useState<string | null>(null);
+  const [checklistToDelete, setChecklistToDelete] = useState<BranchChecklist | null>(null);
 
   // New Checklist Form
   const [newChecklistForm, setNewChecklistForm] = useState({
@@ -276,6 +278,22 @@ export const BranchChecklistsView: React.FC<BranchChecklistsViewProps> = ({
     } else {
       setReopenError(res.error || 'Erro ao reabrir.');
     }
+  };
+
+  // Confirm Delete Checklist
+  const handleConfirmDelete = () => {
+    if (!checklistToDelete) return;
+    const target = checklistToDelete;
+    const res = deleteChecklist(target.id);
+    if (res.success) {
+      if (executingChecklist?.id === target.id) {
+        setExecutingChecklist(null);
+      }
+      triggerToast(`Checklist "${target.nome}" excluído com sucesso!`);
+    } else {
+      triggerToast(res.error || 'Erro ao excluir checklist.');
+    }
+    setChecklistToDelete(null);
   };
 
   return (
@@ -561,31 +579,44 @@ export const BranchChecklistsView: React.FC<BranchChecklistsViewProps> = ({
 
                 {/* Footer Action Buttons */}
                 <div className="bg-slate-50 p-3 px-5 border-t border-slate-100 flex items-center justify-between gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleOpenExecution(chk)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-sm transition-colors cursor-pointer"
-                  >
-                    <span>{isDone ? 'Visualizar / Revisar' : 'Preencher / Continuar'}</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-
-                  {/* Reopen button (Only for Authorized users when checklist is concluded) */}
-                  {isDone && permissions.podeReabrirChecklists && (
+                  <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => {
-                        setReopenTargetChecklist(chk);
-                        setReopenReason('');
-                        setReopenError(null);
-                      }}
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold border border-amber-200 transition-colors cursor-pointer"
-                      title="Reabrir checklist concluído (exclusivo para autorizados)"
+                      onClick={() => handleOpenExecution(chk)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-sm transition-colors cursor-pointer"
                     >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                      <span>Reabrir</span>
+                      <span>{isDone ? 'Visualizar / Revisar' : 'Preencher / Continuar'}</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
                     </button>
-                  )}
+
+                    {/* Reopen button (Only for Authorized users when checklist is concluded) */}
+                    {isDone && permissions.podeReabrirChecklists && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setReopenTargetChecklist(chk);
+                          setReopenReason('');
+                          setReopenError(null);
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold border border-amber-200 transition-colors cursor-pointer"
+                        title="Reabrir checklist concluído (exclusivo para autorizados)"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>Reabrir</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Botão de Excluir Checklist */}
+                  <button
+                    type="button"
+                    onClick={() => setChecklistToDelete(chk)}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-xs font-bold transition-all cursor-pointer shadow-xs"
+                    title="Excluir este checklist definitivamente"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                    <span className="hidden sm:inline">Excluir</span>
+                  </button>
                 </div>
               </div>
             );
@@ -878,15 +909,27 @@ export const BranchChecklistsView: React.FC<BranchChecklistsViewProps> = ({
               </div>
             )}
 
-            {/* Footer Buttons: Salvar sem concluir, Finalizar */}
+            {/* Footer Buttons: Salvar sem concluir, Finalizar, Excluir */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-3 border-t border-slate-200 shrink-0">
-              <button
-                type="button"
-                onClick={() => setExecutingChecklist(null)}
-                className="w-full sm:w-auto px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer min-h-[42px] order-3 sm:order-1"
-              >
-                Fechar sem Salvar
-              </button>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 order-2 sm:order-1">
+                <button
+                  type="button"
+                  onClick={() => setExecutingChecklist(null)}
+                  className="w-full sm:w-auto px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer min-h-[42px]"
+                >
+                  Fechar sem Salvar
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setChecklistToDelete(executingChecklist)}
+                  className="w-full sm:w-auto px-3.5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer min-h-[42px]"
+                  title="Excluir este checklist definitivamente"
+                >
+                  <Trash2 className="w-4 h-4 text-rose-600" />
+                  <span>Excluir Checklist</span>
+                </button>
+              </div>
 
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto order-1 sm:order-2">
                 {/* Salvar sem concluir (Retomar depois) */}
@@ -1120,6 +1163,20 @@ export const BranchChecklistsView: React.FC<BranchChecklistsViewProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal de Confirmação de Exclusão de Checklist */}
+      {checklistToDelete && (
+        <ConfirmModal
+          isOpen={!!checklistToDelete}
+          title="Excluir Checklist"
+          message={`Tem certeza que deseja excluir o checklist "${checklistToDelete.nome}" da unidade "${checklistToDelete.unidadeNome}"? Esta ação removerá definitivamente todos os itens preenchidos e o histórico deste checklist no banco central.`}
+          confirmText="Sim, Excluir Checklist"
+          cancelText="Cancelar"
+          variant="danger"
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setChecklistToDelete(null)}
+        />
       )}
     </div>
   );

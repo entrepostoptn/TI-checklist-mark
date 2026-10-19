@@ -3,6 +3,7 @@ import { useServiceOrders } from '../context/ServiceOrderContext';
 import { useBranchChecklists } from '../context/BranchChecklistContext';
 import { ServiceOrder } from '../types/serviceOrder';
 import { SystemPage } from './SidebarNavigation';
+import { ServiceOrdersCompletedChart } from './ServiceOrdersCompletedChart';
 import {
   Wrench,
   ClipboardCheck,
@@ -261,6 +262,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <ArrowRight className="w-3.5 h-3.5" />
         </button>
       </div>
+
+      {/* Gráfico Recharts: Ordens de Serviço Concluídas nos Últimos Dias */}
+      <ServiceOrdersCompletedChart
+        orders={orders}
+        onNavigateToOrders={() => onNavigate('legacy_service_orders')}
+      />
 
       {/* Recent Activity Table with Mobile Card View Fallback */}
       <div className="bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-6 shadow-xs space-y-3.5">

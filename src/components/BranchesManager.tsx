@@ -5,7 +5,9 @@ import { useAuth } from '../context/AuthContext';
 import { useServiceOrders } from '../context/ServiceOrderContext';
 import { useBranchChecklists } from '../context/BranchChecklistContext';
 import { BranchUnit, BranchStatus, BranchType } from '../types/branch';
+import { BranchChecklist } from '../types/branchChecklist';
 import { ServiceOrder } from '../types/serviceOrder';
+import { ConfirmModal } from './ConfirmModal';
 import {
   Building2,
   Search,
@@ -13,6 +15,7 @@ import {
   Download,
   Plus,
   Eye,
+  Trash2,
   Edit2,
   Power,
   ClipboardList,
@@ -71,7 +74,7 @@ export const BranchesManager: React.FC<BranchesManagerProps> = ({
   const { logs } = useAudit();
   const { user, permissions } = useAuth();
   const { orders } = useServiceOrders();
-  const { checklists } = useBranchChecklists();
+  const { checklists, deleteChecklist } = useBranchChecklists();
 
   // Navigation hierarchy: Matrizes -> Selecionar Matriz -> Visualizar Filiais -> Selecionar Filial -> Consultar / Abrir Atendimentos
   const [navLevel, setNavLevel] = useState<NavigationLevel>('MATRIZES_OVERVIEW');
@@ -88,6 +91,7 @@ export const BranchesManager: React.FC<BranchesManagerProps> = ({
   const [branchToToggle, setBranchToToggle] = useState<BranchUnit | null>(null);
   const [toggleReason, setToggleReason] = useState('');
   const [branchHistoryModal, setBranchHistoryModal] = useState<BranchUnit | null>(null);
+  const [checklistToDelete, setChecklistToDelete] = useState<BranchChecklist | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -1144,15 +1148,25 @@ export const BranchesManager: React.FC<BranchesManagerProps> = ({
                               Responsável: {chk.responsavelNome} • Atualizado em {new Date(chk.dataAtualizacao).toLocaleDateString('pt-BR')}
                             </div>
                           </div>
-                          <span
-                            className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                              chk.status === 'CONCLUIDO'
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : 'bg-amber-100 text-amber-800'
-                            }`}
-                          >
-                            {chk.status}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                                chk.status === 'CONCLUIDO'
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : 'bg-amber-100 text-amber-800'
+                              }`}
+                            >
+                              {chk.status}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setChecklistToDelete(chk)}
+                              className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                              title="Excluir checklist"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -1707,6 +1721,23 @@ export const BranchesManager: React.FC<BranchesManagerProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal de Confirmação de Exclusão de Checklist */}
+      {checklistToDelete && (
+        <ConfirmModal
+          isOpen={!!checklistToDelete}
+          title="Excluir Checklist"
+          message={`Tem certeza que deseja excluir o checklist "${checklistToDelete.nome}" da filial "${checklistToDelete.unidadeNome}"? Esta ação removerá definitivamente os dados e o histórico deste checklist no banco central.`}
+          confirmText="Sim, Excluir Checklist"
+          cancelText="Cancelar"
+          variant="danger"
+          onConfirm={() => {
+            deleteChecklist(checklistToDelete.id);
+            setChecklistToDelete(null);
+          }}
+          onCancel={() => setChecklistToDelete(null)}
+        />
       )}
     </div>
   );
