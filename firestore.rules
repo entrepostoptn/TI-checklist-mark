@@ -113,6 +113,18 @@ service cloud.firestore {
       allow write: if isValidId(projectId);
     }
 
+    // Fila e Dossiê de Manutenção Integrado às OS
+    match /maintenance_queue/{queueId} {
+      allow get, list: if true;
+      allow write: if isValidId(queueId);
+    }
+
+    // Demandas e Chamados do Dia a Dia (Vivo, Acessos, etc.)
+    match /daily_demands/{demandId} {
+      allow get, list: if true;
+      allow write: if isValidId(demandId);
+    }
+
     // Configurações do Sistema e Controle de Sincronização
     match /system_config/{configId} {
       allow get, list: if true;

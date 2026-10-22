@@ -22,6 +22,8 @@ import { KnowledgeArticle } from '../types/knowledgeBase';
 import { User } from '../types/auth';
 import { RemoteAccess, RemoteAccessHistory } from '../types/remoteAccess';
 import { CctvProject, CctvPermissionsConfig } from '../types/cctv';
+import { MaintenanceRecord } from '../types/maintenance';
+import { DailyDemand } from '../types/dailyDemand';
 import {
   INITIAL_PATA_NEGRA_BRANCHES,
   INITIAL_CHECKLIST_TEMPLATES,
@@ -1125,6 +1127,104 @@ export async function syncSaveCctvPermissions(config: CctvPermissionsConfig): Pr
     notifySyncSuccess('cctv_permissions');
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+// -------------------------------------------------------------
+// 15. Fila e Fluxo de Manutenção Integrado às OS
+// -------------------------------------------------------------
+export function subscribeToMaintenanceQueue(
+  onData: (records: MaintenanceRecord[]) => void,
+  onError?: (err: unknown) => void
+): Unsubscribe {
+  const path = 'maintenance_queue';
+  return onSnapshot(
+    collection(db, 'maintenance_queue'),
+    (snapshot) => {
+      const records = snapshot.docs.map((docSnap) => ({
+        id: docSnap.id,
+        ...docSnap.data(),
+      })) as MaintenanceRecord[];
+      onData(records);
+      notifySyncSuccess('maintenance_queue', records.length);
+    },
+    (error) => {
+      onError?.(error);
+      handleFirestoreError(error, OperationType.LIST, path);
+    }
+  );
+}
+
+export async function syncSaveMaintenanceRecord(record: MaintenanceRecord): Promise<void> {
+  const path = `maintenance_queue/${record.id}`;
+  try {
+    await setDoc(
+      doc(db, 'maintenance_queue', record.id),
+      sanitizeForFirestore({ ...record, updatedAt: new Date().toISOString() }),
+      { merge: true }
+    );
+    notifySyncSuccess('maintenance_queue', 1);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+export async function syncDeleteMaintenanceRecord(id: string): Promise<void> {
+  const path = `maintenance_queue/${id}`;
+  try {
+    await deleteDoc(doc(db, 'maintenance_queue', id));
+    notifySyncSuccess('maintenance_queue', 1);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+
+// -------------------------------------------------------------
+// 16. Demandas e Chamados do Dia a Dia (Vivo, Acessos, Provedores)
+// -------------------------------------------------------------
+export function subscribeToDailyDemands(
+  onData: (demands: DailyDemand[]) => void,
+  onError?: (err: unknown) => void
+): Unsubscribe {
+  const path = 'daily_demands';
+  return onSnapshot(
+    collection(db, 'daily_demands'),
+    (snapshot) => {
+      const demands = snapshot.docs.map((docSnap) => ({
+        id: docSnap.id,
+        ...docSnap.data(),
+      })) as DailyDemand[];
+      onData(demands);
+      notifySyncSuccess('daily_demands', demands.length);
+    },
+    (error) => {
+      onError?.(error);
+      handleFirestoreError(error, OperationType.LIST, path);
+    }
+  );
+}
+
+export async function syncSaveDailyDemand(demand: DailyDemand): Promise<void> {
+  const path = `daily_demands/${demand.id}`;
+  try {
+    await setDoc(
+      doc(db, 'daily_demands', demand.id),
+      sanitizeForFirestore({ ...demand, updatedAt: new Date().toISOString() }),
+      { merge: true }
+    );
+    notifySyncSuccess('daily_demands', 1);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+export async function syncDeleteDailyDemand(id: string): Promise<void> {
+  const path = `daily_demands/${id}`;
+  try {
+    await deleteDoc(doc(db, 'daily_demands', id));
+    notifySyncSuccess('daily_demands', 1);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
   }
 }
 

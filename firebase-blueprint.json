@@ -460,6 +460,14 @@
       "schema": { "$ref": "MachinePatrimonyHistory" },
       "description": "Histórico completo de intervenções e alterações da máquina"
     },
+    "/maintenance_queue/{queueId}": {
+      "schema": { "$ref": "MaintenanceRecord" },
+      "description": "Fila técnica de manutenção em laboratório integrada às Ordens de Serviço"
+    },
+    "/daily_demands/{demandId}": {
+      "schema": { "$ref": "DailyDemand" },
+      "description": "Demandas e chamados operacionais do dia a dia (Vivo, acessos, provedores)"
+    },
     "/system_config/{configId}": {
       "schema": { "$ref": "SystemConfig" },
       "description": "Configurações e controle de estado do sistema"

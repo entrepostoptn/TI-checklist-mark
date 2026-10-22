@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useBranches } from '../context/BranchContext';
 import { useEquipment } from '../context/EquipmentContext';
 import { useServiceOrders } from '../context/ServiceOrderContext';
+import { useMaintenance } from '../context/MaintenanceContext';
 import { BranchUnit } from '../types/branch';
 import { Equipment, EquipmentType } from '../types/equipment';
 import { ServiceOrder, ServiceOrderStatus, ServiceOrderPriority, ServiceOrderType } from '../types/serviceOrder';
@@ -50,8 +51,9 @@ export const ServiceOrderFastModal: React.FC<ServiceOrderFastModalProps> = ({
   onOrderCreated,
 }) => {
   const { branches, matriz, filiais } = useBranches();
-  const { equipments, addEquipment } = useEquipment();
+  const { equipments, addEquipment, updateEquipment } = useEquipment();
   const { addOrder, getOrdersByEquipmentId } = useServiceOrders();
+  const { createRecordFromOS } = useMaintenance();
 
   // Wizard Steps (1: Matriz/Filial, 2: Equipamento, 3: Atendimento)
   const [currentStep, setCurrentStep] = useState<number>(() => {
@@ -241,6 +243,19 @@ export const ServiceOrderFastModal: React.FC<ServiceOrderFastModalProps> = ({
       checklistProgresso: 0,
       checklistConcluido: false,
     });
+
+    // Enfileira a máquina automaticamente no fluxo de manutenção do laboratório
+    createRecordFromOS(newOs, selectedEquipment);
+
+    // Atualiza status do equipamento para Em Manutenção no Escritório
+    if (selectedEquipment) {
+      updateEquipment(selectedEquipment.id, {
+        status: 'EM_MANUTENCAO',
+        localizacaoAtual: 'ESCRITORIO',
+        dataUltimaEntrada: new Date().toISOString(),
+        tecnicoResponsavel,
+      });
+    }
 
     onOrderCreated?.(newOs);
     onClose();

@@ -23,6 +23,10 @@ import { UserManagerView } from './components/UserManagerView';
 import { KnowledgeBaseView } from './components/KnowledgeBaseView';
 import { MachinesManager } from './components/MachinesManager';
 import { CctvProjectView } from './components/CctvProjectView';
+import { MaintenanceProvider } from './context/MaintenanceContext';
+import { DailyDemandsProvider } from './context/DailyDemandsContext';
+import { MaintenanceDashboardView } from './components/MaintenanceDashboardView';
+import { DailyDemandsManager } from './components/DailyDemandsManager';
 
 // Existing Matrix TI Components (Preserving full legacy functionality)
 import { EquipmentManager } from './components/EquipmentManager';
@@ -327,6 +331,12 @@ const MainApp: React.FC = () => {
             />
           )}
 
+          {/* Section: Fila & Fluxo de Manutenção de Máquinas no Laboratório */}
+          {currentPage === 'maintenance' && <MaintenanceDashboardView />}
+
+          {/* Section: Demandas & Chamados do Dia a Dia (Vivo, Acessos Remotos) */}
+          {currentPage === 'daily_demands' && <DailyDemandsManager />}
+
           {/* Módulo Oculto de Projeto de Câmeras (CFTV) - Acesso Matheus / Marcos autorizado */}
           {currentPage === 'cctv' && <CctvProjectView />}
 
@@ -576,7 +586,11 @@ export default function App() {
                     <ServiceOrderProvider>
                       <ChecklistProvider>
                         <CctvProvider>
-                          <MainApp />
+                          <MaintenanceProvider>
+                            <DailyDemandsProvider>
+                              <MainApp />
+                            </DailyDemandsProvider>
+                          </MaintenanceProvider>
                         </CctvProvider>
                       </ChecklistProvider>
                     </ServiceOrderProvider>

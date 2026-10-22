@@ -3,6 +3,7 @@ import { ServiceOrder, ServiceOrderStatus, ServiceOrderPriority } from '../types
 import { useServiceOrders } from '../context/ServiceOrderContext';
 import { useEquipment } from '../context/EquipmentContext';
 import { useBranches } from '../context/BranchContext';
+import { useMaintenance } from '../context/MaintenanceContext';
 import { MachineType } from '../types/checklist';
 import { Equipment } from '../types/equipment';
 import { formatDateBR, formatShortDateTimeBR } from '../utils/dateFormatter';
@@ -47,6 +48,7 @@ export const ServiceOrderModal: React.FC<ServiceOrderModalProps> = ({
   const { addOrder, updateOrder } = useServiceOrders();
   const { equipments, updateEquipment, addMovement, addHardwareChange } = useEquipment();
   const { branches } = useBranches();
+  const { createRecordFromOS } = useMaintenance();
 
   // Machine selection state
   const [selectedEquipmentId, setSelectedEquipmentId] = useState<string>('');
@@ -239,6 +241,16 @@ export const ServiceOrderModal: React.FC<ServiceOrderModalProps> = ({
       savedOrder = { ...orderToEdit, ...orderPayload };
     } else {
       savedOrder = addOrder(orderPayload);
+      // Enfileira a máquina automaticamente no fluxo de manutenção do laboratório
+      createRecordFromOS(savedOrder, selectedEquipment);
+      if (selectedEquipmentId) {
+        updateEquipment(selectedEquipmentId, {
+          status: 'EM_MANUTENCAO',
+          localizacaoAtual: 'ESCRITORIO',
+          dataUltimaEntrada: new Date().toISOString(),
+          tecnicoResponsavel,
+        });
+      }
     }
 
     // Se houver troca de peças preenchida, salva no histórico de hardware do equipamento

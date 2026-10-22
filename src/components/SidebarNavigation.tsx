@@ -1,5 +1,7 @@
 import React from 'react';
 import { useAuth, getUserDisplayRole } from '../context/AuthContext';
+import { useMaintenance } from '../context/MaintenanceContext';
+import { useDailyDemands } from '../context/DailyDemandsContext';
 import {
   LayoutDashboard,
   Building2,
@@ -18,12 +20,16 @@ import {
   X,
   BookOpen,
   Video,
+  PhoneCall,
+  Cpu,
 } from 'lucide-react';
 
 export type SystemPage =
   | 'dashboard'
   | 'branches'
   | 'machines'
+  | 'maintenance'
+  | 'daily_demands'
   | 'cctv'
   | 'checklists'
   | 'templates'
@@ -54,6 +60,13 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
 }) => {
   const { user, isMatheus, permissions, logout } = useAuth();
   const isAdmin = user?.perfil === 'ADMIN';
+  const { stats: maintenanceStats } = useMaintenance();
+  const { stats: demandStats } = useDailyDemands();
+
+  const activeMaintenanceCount =
+    maintenanceStats.emManutencao + maintenanceStats.pendentes + maintenanceStats.disponiveisEnvio;
+  const activeDemandsCount =
+    demandStats.totalAbertos + demandStats.emAndamento + demandStats.aguardandoTerceiro;
 
   const navItems = [
     {
@@ -73,6 +86,18 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
       label: 'Máquinas e Patrimônio',
       icon: Monitor,
       badge: null,
+    },
+    {
+      id: 'maintenance' as SystemPage,
+      label: 'Fila de Manutenção (Lab)',
+      icon: Cpu,
+      badge: activeMaintenanceCount > 0 ? String(activeMaintenanceCount) : null,
+    },
+    {
+      id: 'daily_demands' as SystemPage,
+      label: 'Demandas & Chamados (Vivo)',
+      icon: PhoneCall,
+      badge: activeDemandsCount > 0 ? String(activeDemandsCount) : null,
     },
     {
       id: 'checklists' as SystemPage,

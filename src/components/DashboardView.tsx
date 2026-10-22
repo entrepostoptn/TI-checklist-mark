@@ -1,6 +1,8 @@
 import { useAuth, getUserDisplayRole } from '../context/AuthContext';
 import { useServiceOrders } from '../context/ServiceOrderContext';
 import { useBranchChecklists } from '../context/BranchChecklistContext';
+import { useMaintenance } from '../context/MaintenanceContext';
+import { useDailyDemands } from '../context/DailyDemandsContext';
 import { ServiceOrder } from '../types/serviceOrder';
 import { SystemPage } from './SidebarNavigation';
 import { ServiceOrdersCompletedChart } from './ServiceOrdersCompletedChart';
@@ -18,6 +20,10 @@ import {
   Users,
   Monitor,
   BookOpen,
+  Cpu,
+  PhoneCall,
+  Truck,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface DashboardViewProps {
@@ -34,6 +40,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const { user, permissions } = useAuth();
   const { orders } = useServiceOrders();
   const { checklists } = useBranchChecklists();
+  const { stats: maintenanceStats } = useMaintenance();
+  const { stats: demandStats } = useDailyDemands();
 
   // Active / pending counts for core operations
   const activeOrders = orders.filter(
@@ -261,6 +269,119 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <span>Acessar Máquinas</span>
           <ArrowRight className="w-3.5 h-3.5" />
         </button>
+      </div>
+
+      {/* Grid: Fila de Manutenção (Lab) & Demandas do Dia a Dia (Vivo, Acessos) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Card 1: Fila de Manutenção de Máquinas no Laboratório */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col justify-between space-y-4">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                  <Cpu className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md">
+                    Laboratório Técnico
+                  </span>
+                  <h3 className="font-extrabold text-slate-900 text-sm sm:text-base">
+                    Fila de Manutenção Integrada às OS
+                  </h3>
+                </div>
+              </div>
+
+              <span className="text-xs font-bold text-slate-500 flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                Ao vivo
+              </span>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Checklists de bancada, diagnóstico de problemas, peças substituídas e controle de liberação para envio às lojas.
+            </p>
+
+            <div className="grid grid-cols-3 gap-2 text-center pt-1">
+              <div className="p-2.5 rounded-xl bg-amber-50/70 border border-amber-100">
+                <div className="text-lg font-black text-amber-700">{maintenanceStats.emManutencao}</div>
+                <div className="text-[10px] font-bold text-amber-900 mt-0.5">Em Bancada</div>
+              </div>
+              <div className="p-2.5 rounded-xl bg-rose-50/70 border border-rose-100">
+                <div className="text-lg font-black text-rose-700">{maintenanceStats.pendentes}</div>
+                <div className="text-[10px] font-bold text-rose-900 mt-0.5">Pendentes</div>
+              </div>
+              <div className="p-2.5 rounded-xl bg-teal-50/70 border border-teal-100">
+                <div className="text-lg font-black text-teal-700">{maintenanceStats.disponiveisEnvio}</div>
+                <div className="text-[10px] font-bold text-teal-900 mt-0.5">P/ Envio Loja</div>
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => onNavigate('maintenance')}
+            className="w-full py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs"
+          >
+            <Wrench className="w-4 h-4 text-amber-400" />
+            <span>Abrir Fila de Manutenção do Lab</span>
+            <ArrowRight className="w-3.5 h-3.5 ml-auto" />
+          </button>
+        </div>
+
+        {/* Card 2: Demandas & Chamados do Dia a Dia (Vivo, Acessos) */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col justify-between space-y-4">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                  <PhoneCall className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md">
+                    Operações & Terceiros
+                  </span>
+                  <h3 className="font-extrabold text-slate-900 text-sm sm:text-base">
+                    Demandas & Chamados (Vivo, Acessos)
+                  </h3>
+                </div>
+              </div>
+
+              <span className="text-xs font-bold text-slate-500 flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-purple-500" />
+                Rotina TI
+              </span>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Anotação de chamados externos com operadoras (Vivo, Claro), acessos AnyDesk e acompanhamento de andamento.
+            </p>
+
+            <div className="grid grid-cols-3 gap-2 text-center pt-1">
+              <div className="p-2.5 rounded-xl bg-blue-50/70 border border-blue-100">
+                <div className="text-lg font-black text-blue-700">{demandStats.totalAbertos}</div>
+                <div className="text-[10px] font-bold text-blue-900 mt-0.5">Abertos</div>
+              </div>
+              <div className="p-2.5 rounded-xl bg-amber-50/70 border border-amber-100">
+                <div className="text-lg font-black text-amber-700">{demandStats.emAndamento}</div>
+                <div className="text-[10px] font-bold text-amber-900 mt-0.5">Em Andamento</div>
+              </div>
+              <div className="p-2.5 rounded-xl bg-orange-50/70 border border-orange-100">
+                <div className="text-lg font-black text-orange-700">{demandStats.aguardandoTerceiro}</div>
+                <div className="text-[10px] font-bold text-orange-900 mt-0.5">Aguardando Vivo</div>
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => onNavigate('daily_demands')}
+            className="w-full py-2.5 px-3 rounded-xl bg-purple-700 hover:bg-purple-600 text-white font-extrabold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs"
+          >
+            <PhoneCall className="w-4 h-4 text-purple-300" />
+            <span>Ver Demandas & Anotar Chamados</span>
+            <ArrowRight className="w-3.5 h-3.5 ml-auto" />
+          </button>
+        </div>
       </div>
 
       {/* Gráfico Recharts: Ordens de Serviço Concluídas nos Últimos Dias */}
