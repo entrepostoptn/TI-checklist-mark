@@ -24,6 +24,7 @@ import { RemoteAccess, RemoteAccessHistory } from '../types/remoteAccess';
 import { CctvProject, CctvPermissionsConfig } from '../types/cctv';
 import { MaintenanceRecord } from '../types/maintenance';
 import { DailyDemand } from '../types/dailyDemand';
+import { DailyTask } from '../types/task';
 import {
   INITIAL_PATA_NEGRA_BRANCHES,
   INITIAL_CHECKLIST_TEMPLATES,
@@ -1223,6 +1224,55 @@ export async function syncDeleteDailyDemand(id: string): Promise<void> {
   try {
     await deleteDoc(doc(db, 'daily_demands', id));
     notifySyncSuccess('daily_demands', 1);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+
+// -------------------------------------------------------------
+// 17. Tarefas Diárias e Agenda Operacional
+// -------------------------------------------------------------
+export function subscribeToDailyTasks(
+  onData: (tasks: DailyTask[]) => void,
+  onError?: (err: unknown) => void
+): Unsubscribe {
+  const path = 'daily_tasks';
+  return onSnapshot(
+    collection(db, 'daily_tasks'),
+    (snapshot) => {
+      const tasks = snapshot.docs.map((docSnap) => ({
+        id: docSnap.id,
+        ...docSnap.data(),
+      })) as DailyTask[];
+      onData(tasks);
+      notifySyncSuccess('daily_tasks', tasks.length);
+    },
+    (error) => {
+      onError?.(error);
+      handleFirestoreError(error, OperationType.LIST, path);
+    }
+  );
+}
+
+export async function syncSaveDailyTask(task: DailyTask): Promise<void> {
+  const path = `daily_tasks/${task.id}`;
+  try {
+    await setDoc(
+      doc(db, 'daily_tasks', task.id),
+      sanitizeForFirestore({ ...task, updatedAt: new Date().toISOString() }),
+      { merge: true }
+    );
+    notifySyncSuccess('daily_tasks', 1);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+export async function syncDeleteDailyTask(id: string): Promise<void> {
+  const path = `daily_tasks/${id}`;
+  try {
+    await deleteDoc(doc(db, 'daily_tasks', id));
+    notifySyncSuccess('daily_tasks', 1);
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, path);
   }

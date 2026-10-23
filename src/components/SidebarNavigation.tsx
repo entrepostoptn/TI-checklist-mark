@@ -2,6 +2,7 @@ import React from 'react';
 import { useAuth, getUserDisplayRole } from '../context/AuthContext';
 import { useMaintenance } from '../context/MaintenanceContext';
 import { useDailyDemands } from '../context/DailyDemandsContext';
+import { useDailyTasks } from '../context/DailyTasksContext';
 import {
   LayoutDashboard,
   Building2,
@@ -22,10 +23,12 @@ import {
   Video,
   PhoneCall,
   Cpu,
+  Calendar,
 } from 'lucide-react';
 
 export type SystemPage =
   | 'dashboard'
+  | 'agenda'
   | 'branches'
   | 'machines'
   | 'maintenance'
@@ -62,18 +65,27 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
   const isAdmin = user?.perfil === 'ADMIN';
   const { stats: maintenanceStats } = useMaintenance();
   const { stats: demandStats } = useDailyDemands();
+  const { totalPendingCount } = useDailyTasks();
 
   const activeMaintenanceCount =
     maintenanceStats.emManutencao + maintenanceStats.pendentes + maintenanceStats.disponiveisEnvio;
   const activeDemandsCount =
     demandStats.totalAbertos + demandStats.emAndamento + demandStats.aguardandoTerceiro;
+  const totalAgendaBadges =
+    totalPendingCount + maintenanceStats.disponiveisEnvio + activeDemandsCount;
 
   const navItems = [
     {
       id: 'dashboard' as SystemPage,
-      label: 'Dashboard',
+      label: 'Dashboard & Agenda',
       icon: LayoutDashboard,
-      badge: null,
+      badge: totalAgendaBadges > 0 ? `${totalAgendaBadges}` : null,
+    },
+    {
+      id: 'agenda' as SystemPage,
+      label: 'Minha Agenda & Tarefas',
+      icon: Calendar,
+      badge: totalAgendaBadges > 0 ? `${totalAgendaBadges}` : null,
     },
     {
       id: 'branches' as SystemPage,

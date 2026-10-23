@@ -74,3 +74,11 @@ export function calculateDaysBetween(startDateStr?: string | null, endDateStr?: 
     return 0;
   }
 }
+
+export function formatRelativeDays(dateStr?: string | null): string {
+  if (!dateStr) return '-';
+  const days = calculateDaysBetween(dateStr);
+  if (days === 0) return 'Hoje';
+  if (days === 1) return 'Ontem (há 1 dia)';
+  return `Há ${days} dias`;
+}

@@ -125,6 +125,12 @@ service cloud.firestore {
       allow write: if isValidId(demandId);
     }
 
+    // Tarefas Diárias e Agenda Operacional
+    match /daily_tasks/{taskId} {
+      allow get, list: if true;
+      allow write: if isValidId(taskId);
+    }
+
     // Configurações do Sistema e Controle de Sincronização
     match /system_config/{configId} {
       allow get, list: if true;

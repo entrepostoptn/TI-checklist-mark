@@ -25,8 +25,10 @@ import { MachinesManager } from './components/MachinesManager';
 import { CctvProjectView } from './components/CctvProjectView';
 import { MaintenanceProvider } from './context/MaintenanceContext';
 import { DailyDemandsProvider } from './context/DailyDemandsContext';
+import { DailyTasksProvider } from './context/DailyTasksContext';
 import { MaintenanceDashboardView } from './components/MaintenanceDashboardView';
 import { DailyDemandsManager } from './components/DailyDemandsManager';
+import { DailyAgendaHub } from './components/DailyAgendaHub';
 
 // Existing Matrix TI Components (Preserving full legacy functionality)
 import { EquipmentManager } from './components/EquipmentManager';
@@ -309,6 +311,9 @@ const MainApp: React.FC = () => {
             />
           )}
 
+          {/* Section: Minha Agenda & Tarefas Operacionais do Dia */}
+          {currentPage === 'agenda' && <DailyAgendaHub />}
+
           {/* Section 2: Matrizes e Filiais (Hierarquia: Matrizes -> Filiais -> Atendimentos) */}
           {currentPage === 'branches' && (
             <BranchesManager
@@ -435,12 +440,12 @@ const MainApp: React.FC = () => {
           type="button"
           onClick={() => setCurrentPage('dashboard')}
           className={`flex-1 flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all cursor-pointer min-h-[48px] ${
-            currentPage === 'dashboard'
+            currentPage === 'dashboard' || currentPage === 'agenda'
               ? 'text-blue-600 font-bold'
               : 'text-slate-500 hover:text-slate-900 active:bg-slate-100'
           }`}
         >
-          <LayoutDashboard className={`w-5 h-5 ${currentPage === 'dashboard' ? 'stroke-[2.5]' : 'stroke-2'}`} />
+          <LayoutDashboard className={`w-5 h-5 ${currentPage === 'dashboard' || currentPage === 'agenda' ? 'stroke-[2.5]' : 'stroke-2'}`} />
           <span className="text-[10px] mt-0.5 font-medium leading-none">Início</span>
         </button>
 
@@ -588,7 +593,9 @@ export default function App() {
                         <CctvProvider>
                           <MaintenanceProvider>
                             <DailyDemandsProvider>
-                              <MainApp />
+                              <DailyTasksProvider>
+                                <MainApp />
+                              </DailyTasksProvider>
                             </DailyDemandsProvider>
                           </MaintenanceProvider>
                         </CctvProvider>

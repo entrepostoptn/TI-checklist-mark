@@ -1,11 +1,14 @@
+import React, { useState } from 'react';
 import { useAuth, getUserDisplayRole } from '../context/AuthContext';
 import { useServiceOrders } from '../context/ServiceOrderContext';
 import { useBranchChecklists } from '../context/BranchChecklistContext';
 import { useMaintenance } from '../context/MaintenanceContext';
 import { useDailyDemands } from '../context/DailyDemandsContext';
+import { useDailyTasks } from '../context/DailyTasksContext';
 import { ServiceOrder } from '../types/serviceOrder';
 import { SystemPage } from './SidebarNavigation';
 import { ServiceOrdersCompletedChart } from './ServiceOrdersCompletedChart';
+import { DailyAgendaHub } from './DailyAgendaHub';
 import {
   Wrench,
   ClipboardCheck,
@@ -24,6 +27,8 @@ import {
   PhoneCall,
   Truck,
   AlertTriangle,
+  Calendar,
+  Layers,
 } from 'lucide-react';
 
 interface DashboardViewProps {
@@ -42,6 +47,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const { checklists } = useBranchChecklists();
   const { stats: maintenanceStats } = useMaintenance();
   const { stats: demandStats } = useDailyDemands();
+  const { totalPendingCount } = useDailyTasks();
+
+  const [activeTab, setActiveTab] = useState<'agenda' | 'metrics'>('agenda');
+
+  const totalAgendaBadges =
+    totalPendingCount + maintenanceStats.disponiveisEnvio + demandStats.totalAbertos + demandStats.emAndamento + demandStats.aguardandoTerceiro;
 
   // Active / pending counts for core operations
   const activeOrders = orders.filter(
@@ -55,28 +66,79 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-200">
-      {/* Objective Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200">
+      {/* Objective Header & Main View Mode Switcher */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-slate-200">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-            Painel Principal
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
+            <span>Central Operacional de TI</span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-            Acessos rápidos para as operações diárias
+            {activeTab === 'agenda'
+              ? 'Agenda diária com pendências de entrega de máquinas, chamados e tarefas com rollover'
+              : 'Indicadores consolidados, ordens de serviço e status das lojas'}
           </p>
         </div>
 
-        {user && (
-          <div className="text-xs text-slate-600 bg-white px-3 py-1.5 rounded-xl border border-slate-200 self-start sm:self-auto font-medium">
-            <span className="font-semibold text-slate-900">{user.nome}</span>
-            <span className="text-slate-400 mx-1.5">—</span>
-            <span className="text-amber-700 font-bold">{getUserDisplayRole(user)}</span>
-          </div>
-        )}
+        {/* Tab Switcher: Agenda x Métricas */}
+        <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-200 self-start sm:self-auto">
+          <button
+            type="button"
+            onClick={() => setActiveTab('agenda')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              activeTab === 'agenda'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+            }`}
+          >
+            <Calendar className="w-4 h-4" />
+            <span>Minha Agenda & Tarefas</span>
+            {totalAgendaBadges > 0 && (
+              <span
+                className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                  activeTab === 'agenda'
+                    ? 'bg-rose-500 text-white'
+                    : 'bg-rose-500/90 text-white'
+                }`}
+              >
+                {totalAgendaBadges}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('metrics')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              activeTab === 'metrics'
+                ? 'bg-slate-900 text-white shadow-sm'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+            }`}
+          >
+            <Layers className="w-4 h-4" />
+            <span>Indicadores & Painel Geral</span>
+          </button>
+        </div>
       </div>
 
-      {/* 4 Core Priority Cards: Atendimento / OS, Checklist, Base de Conhecimento, Relatórios (Requirement 4 & 5) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-5">
+      {/* Render Selected View */}
+      {activeTab === 'agenda' ? (
+        <DailyAgendaHub />
+      ) : (
+        <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-150">
+          {/* User Role Card */}
+          {user && (
+            <div className="flex items-center justify-between text-xs text-slate-600 bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-2xs">
+              <div>
+                Conectado como <strong className="text-slate-900">{user.nome}</strong> ({user.email})
+              </div>
+              <div className="text-amber-700 font-bold bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+                {getUserDisplayRole(user)}
+              </div>
+            </div>
+          )}
+
+          {/* 4 Core Priority Cards: Atendimento / OS, Checklist, Base de Conhecimento, Relatórios (Requirement 4 & 5) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-5">
         {/* 1. Atendimento / Ordem de Serviço */}
         <div className="bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
           <div className="space-y-2.5">
@@ -559,6 +621,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           )}
         </div>
       </div>
+        </div>
+      )}
     </div>
   );
 };

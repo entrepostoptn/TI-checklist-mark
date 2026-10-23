@@ -468,6 +468,10 @@
       "schema": { "$ref": "DailyDemand" },
       "description": "Demandas e chamados operacionais do dia a dia (Vivo, acessos, provedores)"
     },
+    "/daily_tasks/{taskId}": {
+      "schema": { "$ref": "DailyTask" },
+      "description": "Tarefas diárias, lembretes de devolução e agenda do técnico com rollover"
+    },
     "/system_config/{configId}": {
       "schema": { "$ref": "SystemConfig" },
       "description": "Configurações e controle de estado do sistema"
